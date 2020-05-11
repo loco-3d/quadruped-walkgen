@@ -1,5 +1,5 @@
 #include <limits>
-#include <mpc_controller/quadruped.hpp>
+#include <quadruped-walkgen/quadruped.hpp>
 
 
 namespace mpc_controller {

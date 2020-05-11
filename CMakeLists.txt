@@ -1,10 +1,10 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
 # Set up project properties
-SET(PROJECT_NAMESPACE memmo)
-SET(PROJECT_NAME mpc_controller)
+SET(PROJECT_NAMESPACE loco-3d)
+SET(PROJECT_NAME quadruped-walkgen)
 SET(PROJECT_DESCRIPTION "MPC Controller using Crocoddyl")
-SET(PROJECT_URL https://gitlab.laas.fr/loco-3d/quadruped-walkgen)
+SET(PROJECT_URL https://gitlab.laas.fr/${PROJECT_NAMESPACE}/${PROJECT_NAME})
 
 SET(CMAKE_VERBOSE_MAKEFILE True)
 
@@ -23,24 +23,10 @@ COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
 PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
 #ADD_DEFINITIONS(-DWITH_CODEGEN)
 
-# Set a default build type to 'Release' if none was specified
-IF(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  MESSAGE(STATUS "Setting build type to 'Release' as none was specified.")
-  SET(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-  # Set the possible values of build type for cmake-gui
-  SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
-ENDIF()
-
 # Disable -Werror on Unix.
 SET(CXX_DISABLE_WERROR True)
 
-ADD_REQUIRED_DEPENDENCY("eigen3 >= 3.0.5")
-ADD_REQUIRED_DEPENDENCY("pinocchio >= 2.2.1")
-ADD_REQUIRED_DEPENDENCY("eigenpy")
-ADD_REQUIRED_DEPENDENCY("example-robot-data >= 3.1.0")
-ADD_REQUIRED_DEPENDENCY("crocoddyl >= 0.9")
-
-link_directories(/local/installation/lib)
+ADD_PROJECT_DEPENDENCY(crocoddyl REQUIRED)
 
 OPTION(BUILD_WITH_MULTITHREADS "Build the library with the Multithreading support (required OpenMP)" ON)
 IF(BUILD_WITH_MULTITHREADS)
@@ -52,20 +38,13 @@ IF(BUILD_WITH_MULTITHREADS)
   ENDIF()
 ENDIF()
 
-FINDPYTHON(3.6 EXACT REQUIRED)
-INCLUDE_DIRECTORIES(SYSTEM ${PYTHON_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${CROCODDYL_INCLUDE_DIRS} ${PINOCCHIO_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(bindings)
-
-get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-foreach(dir ${dirs})
-  message(STATUS "dir='${dir}'")
-endforeach()
+FINDPYTHON(3.6 REQUIRED)
+STRING(REGEX REPLACE "-" "_" PYTHON_DIR ${PROJECT_NAME})
 
 SET(BOOST_REQUIERED_COMPONENTS python filesystem system)
 SET(BOOST_COMPONENTS ${BOOST_REQUIERED_COMPONENTS})
 SEARCH_FOR_BOOST()
 
-
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(include/${PROJECT_NAME})
-ADD_SUBDIRECTORY(bindings)
+ADD_SUBDIRECTORY(python)

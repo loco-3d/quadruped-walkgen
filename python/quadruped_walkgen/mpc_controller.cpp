@@ -2,7 +2,7 @@
 #include <boost/python.hpp>
 #include <boost/python/enum.hpp>
 
-#include <mpc_controller/quadruped.hpp>
+#include <quadruped-walkgen/quadruped.hpp>
 #include <boost/python/overloads.hpp>
 #include <boost/python/return_internal_reference.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
