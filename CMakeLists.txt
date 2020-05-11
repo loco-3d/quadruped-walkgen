@@ -28,8 +28,6 @@ SET(CXX_DISABLE_WERROR True)
 
 ADD_PROJECT_DEPENDENCY(crocoddyl REQUIRED)
 
-link_directories(/local/installation/lib)
-
 OPTION(BUILD_WITH_MULTITHREADS "Build the library with the Multithreading support (required OpenMP)" ON)
 IF(BUILD_WITH_MULTITHREADS)
   SET(BUILD_WITH_NTHREADS "4" CACHE STRING "Number of threads")
