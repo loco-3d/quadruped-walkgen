@@ -26,11 +26,7 @@ PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
 # Disable -Werror on Unix.
 SET(CXX_DISABLE_WERROR True)
 
-ADD_REQUIRED_DEPENDENCY("eigen3 >= 3.0.5")
-ADD_REQUIRED_DEPENDENCY("pinocchio >= 2.2.1")
-ADD_REQUIRED_DEPENDENCY("eigenpy")
-ADD_REQUIRED_DEPENDENCY("example-robot-data >= 3.1.0")
-ADD_REQUIRED_DEPENDENCY("crocoddyl >= 0.9")
+ADD_PROJECT_DEPENDENCY(crocoddyl REQUIRED)
 
 link_directories(/local/installation/lib)
 
