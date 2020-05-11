@@ -1,8 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
 # Set up project properties
-SET(PROJECT_NAMESPACE memmo)
-SET(PROJECT_NAME mpc_controller)
+SET(PROJECT_NAMESPACE loco-3d)
+SET(PROJECT_NAME quadruped-walkgen)
 SET(PROJECT_DESCRIPTION "MPC Controller using Crocoddyl")
 SET(PROJECT_URL https://gitlab.laas.fr/loco-3d/quadruped-walkgen)
 
