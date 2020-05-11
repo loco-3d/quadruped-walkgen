@@ -1,1 +1,1 @@
-from .libmpc_controller_pywrap import *
+from .libquadruped_walkgen_pywrap import *
