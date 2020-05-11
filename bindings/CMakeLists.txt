@@ -1,0 +1,3 @@
+ADD_SUBDIRECTORY(python/mpc_controller)
+SET(PYWRAP ${PYWRAP} PARENT_SCOPE)
+
