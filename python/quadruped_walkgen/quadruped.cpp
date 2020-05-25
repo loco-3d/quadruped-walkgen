@@ -16,7 +16,7 @@ void exposeActionQuadruped() {
       "x = [x , y, z, rool, pitch, yaw, Vx, Vy, Vz, Vrool, Vpitch, Vyaw] , 12x \n\n"
       "and u is the groud reaction forces at each 4 foot, defined as : \n"
       "u = [fx1 , fy1, fz1, ... fz4], 12x",
-      bp::init<>(bp::args("self"), "Initialize the quadruped action model."))
+      bp::init<>(bp::args("self" ), "Initialize the quadruped action model."))
       .def("calc", &ActionModelQuadruped::calc, bp::args("self", "data", "x", "u"),
           "Compute the next state and cost value.\n\n"
           "It describes the time-discrete evolution of the quadruped system.\n"
@@ -54,10 +54,12 @@ void exposeActionQuadruped() {
       .add_property("stateWeights",
                     bp::make_function(&ActionModelQuadruped::get_state_weights, bp::return_internal_reference<>()),
                     bp::make_function(&ActionModelQuadruped::set_state_weights), "Weights on the state vector")
+      .add_property("frictionWeights", bp::make_function(&ActionModelQuadruped::get_friction_weight, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadruped::set_friction_weight) , "Weight on friction cone term")
       .add_property("A",
                     bp::make_function(&ActionModelQuadruped::get_A, bp::return_internal_reference<>()),
                      "get A matrix")
-     .add_property("B",
+      .add_property("B",
                     bp::make_function(&ActionModelQuadruped::get_B, bp::return_internal_reference<>()),
                      "get B matrix") ;
      
@@ -73,6 +75,7 @@ void exposeActionQuadruped() {
       bp::init<ActionModelQuadruped*>(bp::args("self", "model"),
                                      "Create quadruped data.\n\n"
                                      ":param model: quadruped action model"));
+
 }
 
 

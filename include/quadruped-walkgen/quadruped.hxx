@@ -8,16 +8,16 @@ namespace quadruped_walkgen  {
 template <typename Scalar>
 ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
     : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(12), 12, 24) ,
-    activation(crocoddyl::ActivationBoundsTpl<Scalar>() ) ,
-    dataCost(crocoddyl::ActivationModelAbstractTpl<Scalar>(20)) // Problem 
+    cone(Eigen::Matrix<Scalar, 3, 1>(0,0,1) , 1, 4 , false, 0., std::numeric_limits<Scalar>::max())
   {
   mu = 0.8 ; 
   dt_ = 0.02 ; 
   mass = 2.97784899 ; 
-  cost_weights_ << 10. , 1.;
-  // Weights
+
+  // Weights initialization
   force_weights_ << Eigen::Matrix<Scalar, 12, 1>::Constant(12,1,0.1);
   state_weights_ << 1., 1.,150.,35.,30.,8.,20.,20.,15.,4.,4.,8.  ; 
+  friction_weight_ = 1 ;
 
   // Matrix initialization
   g << 0.,0.,0. ,0.,0.,0., 0.,0.,-9.81*dt_ ,0.,0.,0. ; 
@@ -27,29 +27,29 @@ ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
   A << Eigen::Matrix<Scalar, 12, 12>::Identity() ; 
   A.block(0,6,6,6) << Eigen::Matrix<Scalar, 6, 6>::Identity()*dt_ ; 
   B << Eigen::Matrix<Scalar, 12, 12>::Zero() ; 
-
   lever_arms << Eigen::Matrix<Scalar, 3, 4>::Zero() ; 
-
   R << Eigen::Matrix<Scalar, 3, 3>::Zero() ; 
   lever_tmp << 0.,0.,0. ;
   R_tmp << Eigen::Matrix<Scalar, 3, 3>::Zero() ; 
-  xref_ <<  Eigen::Matrix<Scalar, 12, 1>::Zero() ; 
   
+  // Cone initialization
   nsurf << 0.,0.,1 ; 
-  cone.update(nsurf , mu , 4 , true ) ; 
+  cone.update(nsurf , mu , false  ) ; 
   lb << cone.get_lb() , cone.get_lb() , cone.get_lb() , cone.get_lb() ;
   ub << cone.get_ub() , cone.get_ub() , cone.get_ub() , cone.get_ub() ;
   
+  // Matrix (20x12) to deal with 4 friction cone at same time
   Fa << Eigen::Matrix<Scalar, 20, 12>::Zero() ; 
   for (int i=0; i<4; i=i+1){
     Fa.block(i*5,i*3 , 5,3) = cone.get_A() ; 
+    
   }
 
-  activation.set_bounds(crocoddyl::ActivationBoundsTpl<Scalar>(lb,ub) ) ; 
+  rlb_min_ << Eigen::Matrix<Scalar, 20, 1>::Zero() ; 
+  rub_max_ << Eigen::Matrix<Scalar, 20, 1>::Zero() ;
+  Arr << Eigen::Matrix<Scalar, 20, 20>::Zero() ; 
+
 }
-
-
-
 
 
 template <typename Scalar>
@@ -70,10 +70,21 @@ void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::Ac
 
   ActionDataQuadrupedTpl<Scalar>* d = static_cast<ActionDataQuadrupedTpl<Scalar>*>(data.get());
  
+  // Discrete dynamic
   d->xnext << A*x + B*u + g;
+
+  // Residual cost on the state and force norm
   d->r.template head<12>() =  state_weights_.asDiagonal() * (x - xref_);
   d->r.template tail<12>() =  force_weights_.asDiagonal() * u;
-  d->cost = 0.5 * d->r.transpose() * d->r;
+
+  // Cost relative to the friction cone
+  rlb_min_ = (Fa*u - lb).array().min(0.);
+  rub_max_ = (Fa*u - ub).array().max(0.) ; 
+  
+  // Cost computation 
+  d->cost = 0.5 * d->r.transpose() * d->r     + friction_weight_ * (Scalar(0.5) * rlb_min_.matrix().squaredNorm() +
+                                                Scalar(0.5) * rub_max_.matrix().squaredNorm()) ;
+  
 }
 
 
@@ -97,19 +108,23 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
 
   ActionDataQuadrupedTpl<Scalar>* d = static_cast<ActionDataQuadrupedTpl<Scalar>*>(data.get());
 
-  // Cost derivatives
-  d->Lx = d->r.template head<12>() ;
-  d->Lu = d->r.template tail<12>();
-  d->Lxx.diagonal() << state_weights_.array() * state_weights_.array() ;
-  d->Luu.diagonal() << force_weights_.array() * force_weights_.array();
+  // Matrix friction cone hessian
+  Arr.diagonal() =
+        (((Fa*u - lb).array() <= 0.) + ((Fa*u - ub).array() >= 0.)).matrix().template cast<Scalar>() ; 
 
+  // Cost derivatives
+  d->Lx = (state_weights_.array()* d->r.template head<12>().array()).matrix() ;
+  d->Lu = (force_weights_.array()*d->r.template tail<12>().array()).matrix() +  friction_weight_ *  Fa.transpose()*(rlb_min_ + rub_max_).matrix();
+  d->Lxx.diagonal() = (state_weights_.array() * state_weights_.array()).matrix() ;  
+  
+  
+  d->Luu.diagonal() = (force_weights_.array() * force_weights_.array()).matrix() ; 
+  d->Luu.noalias() = d->Luu + friction_weight_ * Fa.transpose()*Arr*Fa ; 
+  
   // Dynamic derivatives
   d->Fx << A;
-  d->Fu << B;
+  d->Fu << B;  
 }
-
-
-
 
 
 
@@ -118,9 +133,10 @@ boost::shared_ptr<crocoddyl::ActionDataAbstractTpl<Scalar> > ActionModelQuadrupe
   return boost::make_shared<ActionDataQuadrupedTpl<Scalar> >(this);
 }
 
-///////////////////////////////
-// get and set weights ////////
-///////////////////////////////
+///////////////////////////////////////
+// get and set weights vectors ////////
+///////////////////////////////////////
+
 template <typename Scalar>
 const typename Eigen::Matrix<Scalar, 12, 1>& ActionModelQuadrupedTpl<Scalar>::get_force_weights() const {
   return force_weights_;
@@ -146,9 +162,21 @@ void ActionModelQuadrupedTpl<Scalar>::set_state_weights(const typename MathBase:
   }
   state_weights_ = weights;
 }
+
+template <typename Scalar>
+const Scalar& ActionModelQuadrupedTpl<Scalar>::get_friction_weight() const {
+  return friction_weight_;
+}
+
+template <typename Scalar>
+void ActionModelQuadrupedTpl<Scalar>::set_friction_weight(const Scalar& weight) {
+  friction_weight_ = weight;
+}
+
+
 ///////////////////////////
-//// get A & B
-/////////////////////////
+//// get A & B matrix /////
+///////////////////////////
 template <typename Scalar>
 const typename Eigen::Matrix<Scalar, 12, 12>& ActionModelQuadrupedTpl<Scalar>::get_A() const {
   return A;
@@ -167,9 +195,13 @@ const typename Eigen::Matrix<Scalar, 3, 3> get_skew(
       vec[2], 0.0, -vec[0], -vec[1], vec[0], 0.0);
 }
 
+////////////////////////
+// Update current model 
+////////////////////////
+
 template <typename Scalar>
 void ActionModelQuadrupedTpl<Scalar>::update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet  ,
-                    const Eigen::Ref<const typename MathBase::VectorXs>& xref,
+                    const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& S ) {
   if (static_cast<std::size_t>(l_feet.size()) != 12) {
     throw_pretty("Invalid argument: "
@@ -185,9 +217,9 @@ void ActionModelQuadrupedTpl<Scalar>::update_model(const Eigen::Ref<const typena
   }
 
   xref_ = xref ; 
-  
-  R << cos(xref(5)),-sin(xref(5)),0,
-      sin(xref(5)),cos(xref(5)),0,
+
+  R << cos(xref(5,0)),-sin(xref(5,0)),0,
+      sin(xref(5,0)),cos(xref(5,0)),0,
       0,0,1.0 ; 
   
   R.noalias() = (R*gI).inverse() ; // I_inv  
@@ -206,12 +238,7 @@ void ActionModelQuadrupedTpl<Scalar>::update_model(const Eigen::Ref<const typena
       B.block(9 , 3*i  , 3,3) << Eigen::Matrix<Scalar, 3, 3>::Zero();
     };
   } ; 
-
-
 }
-
-
 }
-
 
 #endif
