@@ -75,7 +75,7 @@ fsteps = np.array([[ 1.00000000e+00,  1.90776486e-01,  1.48962816e-01,  4.224989
 # Crocoddyl solver without constraints on fx, fy and fz
 gaitProblem.updateProblem(fsteps , xref , x0)
 
-gaitProblem.max_iter = 8
+gaitProblem.max_iter = 2
 
 start_time = time.time()
 gaitProblem.runProblem()

@@ -7,6 +7,8 @@
 #include "crocoddyl/core/states/euclidean.hpp"
 #include "crocoddyl/multibody/friction-cone.hpp"
 
+#include "crocoddyl/core/utils/timer.hpp"
+
 namespace quadruped_walkgen {
 template <typename _Scalar>
 class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar> {
@@ -34,6 +36,7 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   const typename Eigen::Matrix<Scalar, 12, 1>& get_state_weights() const;
   void set_state_weights(const typename MathBase::VectorXs& weights);
 
+
   const Scalar& get_friction_weight() const;
   void set_friction_weight(const Scalar& weight);
 
@@ -45,8 +48,7 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
 
     // Get A & B matrix
   const typename Eigen::Matrix<Scalar, 12, 12 >& get_A() const;
-  const typename Eigen::Matrix<Scalar, 12, 12 >& get_B() const;
-  
+  const typename Eigen::Matrix<Scalar, 12, 12 >& get_B() const;  
 
  protected:
   using Base::has_control_limits_;  //!< Indicates whether any of the control limits
@@ -84,8 +86,10 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   typename Eigen::Matrix<Scalar, 20, 1 > ub ; 
   typename Eigen::Matrix<Scalar, 20, 12 > Fa ; 
   typename Eigen::Matrix<Scalar, 3, 1 > nsurf ; 
-  
 
+  typename Eigen::Matrix<Scalar, 20, 1 > Fa_x_u ;   
+  typename Eigen::Matrix<Scalar, 20, 1 > rlb_ ; 
+  typename Eigen::Matrix<Scalar, 20, 1 > rub_ ; 
   typename Eigen::Matrix<Scalar, 20, 1 > rlb_min_ ; 
   typename Eigen::Matrix<Scalar, 20, 1 > rub_max_ ; 
   typename Eigen::Matrix<Scalar, 20, 20 > Arr ; 

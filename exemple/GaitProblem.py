@@ -33,7 +33,7 @@ class GaitProblem:
         self.terminalModel = None
 
         # Max iteration ddp solver
-        self.max_iter = 15
+        self.max_iteration = 15
 
         # ddp 
         self.ddp = None
@@ -52,7 +52,8 @@ class GaitProblem:
         self.terminalModel = ActionModelQuadruped() 
        
         self.terminalModel.forceWeights = np.zeros((12,1))
-
+        self.terminalModel.frictionWeights = 0 
+        
         self.problem = crocoddyl.ShootingProblem(np.zeros(12),  self.ListAction, self.terminalModel)
         self.ddp = crocoddyl.SolverDDP(self.problem)
             
@@ -97,7 +98,7 @@ class GaitProblem:
 
     def runProblem(self):
         
-        self.ddp.solve([], [], self.max_iter)
+        self.ddp.solve([], [], self.max_iteration)
 
         return 0
     

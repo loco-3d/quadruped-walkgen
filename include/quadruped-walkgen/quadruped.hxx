@@ -45,10 +45,12 @@ ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
     
   }
 
+  Fa_x_u << Eigen::Matrix<Scalar, 20, 1>::Zero() ; 
+  rlb_ << Eigen::Matrix<Scalar, 20, 1>::Zero() ; 
+  rub_ << Eigen::Matrix<Scalar, 20, 1>::Zero() ; 
   rlb_min_ << Eigen::Matrix<Scalar, 20, 1>::Zero() ; 
   rub_max_ << Eigen::Matrix<Scalar, 20, 1>::Zero() ;
   Arr << Eigen::Matrix<Scalar, 20, 20>::Zero() ; 
-
 }
 
 
@@ -70,21 +72,24 @@ void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::Ac
 
   ActionDataQuadrupedTpl<Scalar>* d = static_cast<ActionDataQuadrupedTpl<Scalar>*>(data.get());
  
-  // Discrete dynamic
-  d->xnext << A*x + B*u + g;
+  // // Discrete dynamic
+  d->xnext << A.diagonal().cwiseProduct(x) + B*u + g;
 
   // Residual cost on the state and force norm
   d->r.template head<12>() =  state_weights_.asDiagonal() * (x - xref_);
   d->r.template tail<12>() =  force_weights_.asDiagonal() * u;
 
-  // Cost relative to the friction cone
-  rlb_min_ = (Fa*u - lb).array().min(0.);
-  rub_max_ = (Fa*u - ub).array().max(0.) ; 
+  for (int i=0; i<4; i=i+1){
+     Fa_x_u.segment(5*i,5) << u(3*i) - mu*u(3*i+2) , -u(3*i) - mu*u(3*i+2),
+                              u(3*i+1) - mu*u(3*i+2) , -u(3*i+1) - mu*u(3*i+2),
+                              u(3*i+2) ;                             
+  }
+  rlb_min_ = (Fa_x_u - lb).array().min(0.);
+  rub_max_ = (Fa_x_u - ub).array().max(0.);   
   
   // Cost computation 
   d->cost = 0.5 * d->r.transpose() * d->r     + friction_weight_ * (Scalar(0.5) * rlb_min_.matrix().squaredNorm() +
                                                 Scalar(0.5) * rub_max_.matrix().squaredNorm()) ;
-  
 }
 
 
@@ -108,19 +113,45 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
 
   ActionDataQuadrupedTpl<Scalar>* d = static_cast<ActionDataQuadrupedTpl<Scalar>*>(data.get());
 
-  // Matrix friction cone hessian
+  // // Matrix friction cone hessian
+  rlb_ = Fa_x_u - lb ; 
+  rub_ = Fa_x_u - ub ; 
   Arr.diagonal() =
-        (((Fa*u - lb).array() <= 0.) + ((Fa*u - ub).array() >= 0.)).matrix().template cast<Scalar>() ; 
-
+        ((rlb_.array() <= 0.) + (rub_.array() >= 0.)).matrix().template cast<Scalar>() ; 
+  
   // Cost derivatives
   d->Lx = (state_weights_.array()* d->r.template head<12>().array()).matrix() ;
-  d->Lu = (force_weights_.array()*d->r.template tail<12>().array()).matrix() +  friction_weight_ *  Fa.transpose()*(rlb_min_ + rub_max_).matrix();
+
+  Scalar r1 = friction_weight_*(rlb_min_(0) + rub_max_(0)) ; 
+  Scalar r2 = friction_weight_*(rlb_min_(1) + rub_max_(1)) ; 
+  Scalar r3 = friction_weight_*(rlb_min_(2) + rub_max_(2)) ; 
+  Scalar r4 = friction_weight_*(rlb_min_(3) + rub_max_(3)) ; 
+  Scalar r5 = friction_weight_*(rlb_min_(4) + rub_max_(4)) ; 
+  d->Lu.block(0,0,3,1) << r1 - r2 , r3 - r4 , -mu*(r1 + r2 + r3 + r4 ) + r5 ;  
+  for (int i=1; i<4; i=i+1){
+    r1 = friction_weight_*(rlb_min_(5*i) + rub_max_(5*i)) ; 
+    r2 = friction_weight_*(rlb_min_(5*i+1) + rub_max_(5*i+1)) ; 
+    r3 = friction_weight_*(rlb_min_(5*i+2) + rub_max_(5*i+2)) ; 
+    r4 = friction_weight_*(rlb_min_(5*i+3) + rub_max_(5*i+3)) ; 
+    r5 = friction_weight_*(rlb_min_(5*i+4) + rub_max_(5*i+4)) ; 
+    d->Lu.block(i*3,0,3,1) << r1 - r2 , r3 - r4 , -mu*(r1 + r2 + r3 + r4 ) + r5 ; 
+  } 
+  d->Lu += (force_weights_.array()*d->r.template tail<12>().array()).matrix() ; 
+  
   d->Lxx.diagonal() = (state_weights_.array() * state_weights_.array()).matrix() ;  
   
-  
-  d->Luu.diagonal() = (force_weights_.array() * force_weights_.array()).matrix() ; 
-  d->Luu.noalias() = d->Luu + friction_weight_ * Fa.transpose()*Arr*Fa ; 
-  
+  for (int i=0; i<4; i=i+1){
+      r1 = friction_weight_*Arr(5*i,5*i) ; 
+      r2 = friction_weight_*Arr(5*i+1,5*i+1) ; 
+      r3 = friction_weight_*Arr(5*i+2,5*i+2) ; 
+      r4 = friction_weight_*Arr(5*i+3,5*i+3) ; 
+      r5 = friction_weight_*Arr(5*i+4,5*i+4) ; 
+      d->Luu.block(3*i,3*i,3,3) << r1 + r2 , 0.0 , mu*(r2 - r1 ),
+                                    0.0,  r3 + r4 , mu*(r4 - r3 ), 
+                                  mu*(r2 - r1 ) , mu*(r4 - r3) , mu*mu*(r1 + r2 + r3 + r4) + r5  ; 
+  }
+  d->Luu.diagonal() = d->Luu.diagonal() + (force_weights_.array() * force_weights_.array()).matrix() ;
+
   // Dynamic derivatives
   d->Fx << A;
   d->Fu << B;  
@@ -186,7 +217,6 @@ const typename Eigen::Matrix<Scalar, 12, 12>& ActionModelQuadrupedTpl<Scalar>::g
   return B;
 }
 
-
 template<typename Scalar>
 const typename Eigen::Matrix<Scalar, 3, 3> get_skew(
     const typename Eigen::Matrix<Scalar, 3, 1 >& vec) {
@@ -218,11 +248,11 @@ void ActionModelQuadrupedTpl<Scalar>::update_model(const Eigen::Ref<const typena
 
   xref_ = xref ; 
 
-  R << cos(xref(5,0)),-sin(xref(5,0)),0,
+  R_tmp << cos(xref(5,0)),-sin(xref(5,0)),0,
       sin(xref(5,0)),cos(xref(5,0)),0,
       0,0,1.0 ; 
   
-  R.noalias() = (R*gI).inverse() ; // I_inv  
+  R = (R_tmp*gI).inverse() ; // I_inv  
   lever_arms.block(0,0,2,4) = l_feet.block(0,0,2,4) ; 
 
   for (int i=0; i<4; i=i+1){
