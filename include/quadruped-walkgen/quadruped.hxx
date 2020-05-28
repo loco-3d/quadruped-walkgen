@@ -73,7 +73,7 @@ void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::Ac
   ActionDataQuadrupedTpl<Scalar>* d = static_cast<ActionDataQuadrupedTpl<Scalar>*>(data.get());
  
   // // Discrete dynamic
-  d->xnext << A.diagonal().cwiseProduct(x) + B*u + g;
+  d->xnext << A*x + B*u + g;
 
   // Residual cost on the state and force norm
   d->r.template head<12>() =  state_weights_.asDiagonal() * (x - xref_);
