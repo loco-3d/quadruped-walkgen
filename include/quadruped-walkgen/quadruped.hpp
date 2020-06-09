@@ -40,6 +40,9 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   const Scalar& get_friction_weight() const;
   void set_friction_weight(const Scalar& weight);
 
+  const Scalar& get_mu() const;
+  void set_mu(const Scalar& mu_coeff);
+
   // Update the model depending if the foot in contact with the ground 
   // or the new lever arms
   void update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet  ,

@@ -204,6 +204,23 @@ void ActionModelQuadrupedTpl<Scalar>::set_friction_weight(const Scalar& weight) 
   friction_weight_ = weight;
 }
 
+template <typename Scalar>
+const Scalar& ActionModelQuadrupedTpl<Scalar>::get_mu() const {
+  return mu;
+}
+
+template <typename Scalar>
+void ActionModelQuadrupedTpl<Scalar>::set_mu(const Scalar& mu_coeff) {
+  mu = mu_coeff;
+  cone.update(nsurf , mu , false  ) ; 
+  
+  // Matrix (20x12) to deal with 4 friction cone at same time
+  Fa << Eigen::Matrix<Scalar, 20, 12>::Zero() ; 
+  for (int i=0; i<4; i=i+1){
+    Fa.block(i*5,i*3 , 5,3) = cone.get_A() ;     
+  }
+}
+
 
 ///////////////////////////
 //// get A & B matrix /////

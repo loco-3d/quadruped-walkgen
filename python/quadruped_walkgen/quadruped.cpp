@@ -56,6 +56,8 @@ void exposeActionQuadruped() {
                     bp::make_function(&ActionModelQuadruped::set_state_weights), "Weights on the state vector")
       .add_property("frictionWeights", bp::make_function(&ActionModelQuadruped::get_friction_weight, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadruped::set_friction_weight) , "Weight on friction cone term")
+      .add_property("mu", bp::make_function(&ActionModelQuadruped::get_mu, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadruped::set_mu) , "Friction coefficient")
       .add_property("A",
                     bp::make_function(&ActionModelQuadruped::get_A, bp::return_internal_reference<>()),
                      "get A matrix")
