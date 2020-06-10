@@ -36,12 +36,24 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   const typename Eigen::Matrix<Scalar, 12, 1>& get_state_weights() const;
   void set_state_weights(const typename MathBase::VectorXs& weights);
 
-
   const Scalar& get_friction_weight() const;
   void set_friction_weight(const Scalar& weight);
 
   const Scalar& get_mu() const;
   void set_mu(const Scalar& mu_coeff);
+
+  const Scalar& get_mass() const;
+  void set_mass(const Scalar& m);
+
+  const Scalar& get_dt() const;
+  void set_dt(const Scalar& dt);
+
+  const typename Eigen::Matrix<Scalar, 3, 3>& get_gI() const;
+  void set_gI(const typename MathBase::Matrix3s& inertia_matrix);
+
+  const Scalar& get_min_fz_contact() const;
+  void set_min_fz_contact(const Scalar& min_fz);
+
 
   // Update the model depending if the foot in contact with the ground 
   // or the new lever arms
@@ -68,6 +80,7 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   Scalar mass ; 
   Scalar mu ;
   Scalar friction_weight_;
+  Scalar min_fz_in_contact ; 
 
   typename Eigen::Matrix<Scalar, 12, 1> force_weights_;
   typename Eigen::Matrix<Scalar, 12, 1> state_weights_;
@@ -84,16 +97,10 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   typename MathBase::Vector3s lever_tmp;
   typename MathBase::MatrixXs xref_;  
 
-  crocoddyl::FrictionConeTpl<Scalar> cone ;
-  typename Eigen::Matrix<Scalar, 20, 1 > lb ; 
   typename Eigen::Matrix<Scalar, 20, 1 > ub ; 
-  typename Eigen::Matrix<Scalar, 20, 12 > Fa ; 
-  typename Eigen::Matrix<Scalar, 3, 1 > nsurf ; 
 
   typename Eigen::Matrix<Scalar, 20, 1 > Fa_x_u ;   
-  typename Eigen::Matrix<Scalar, 20, 1 > rlb_ ; 
   typename Eigen::Matrix<Scalar, 20, 1 > rub_ ; 
-  typename Eigen::Matrix<Scalar, 20, 1 > rlb_min_ ; 
   typename Eigen::Matrix<Scalar, 20, 1 > rub_max_ ; 
   typename Eigen::Matrix<Scalar, 20, 20 > Arr ; 
 };

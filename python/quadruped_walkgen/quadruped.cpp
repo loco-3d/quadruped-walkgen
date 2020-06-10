@@ -58,6 +58,14 @@ void exposeActionQuadruped() {
                     bp::make_function(&ActionModelQuadruped::set_friction_weight) , "Weight on friction cone term")
       .add_property("mu", bp::make_function(&ActionModelQuadruped::get_mu, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadruped::set_mu) , "Friction coefficient")
+      .add_property("mass", bp::make_function(&ActionModelQuadruped::get_mass, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadruped::set_mass) , "Mass \n Warning : The model needs to be updated")
+      .add_property("dt", bp::make_function(&ActionModelQuadruped::get_dt, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadruped::set_dt) , "Minimum normal force allowed for feet in contact with the ground \n Warning : The model needs to be updated")
+      .add_property("min_fz", bp::make_function(&ActionModelQuadruped::get_min_fz_contact, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadruped::set_min_fz_contact) , "dt \n Warning : The model needs to be updated")
+      .add_property("gI", bp::make_function(&ActionModelQuadruped::get_gI, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadruped::set_gI) , "Inertia matrix of the robot in body frame (found in urdf) \n Warning : The model needs to be updated")
       .add_property("A",
                     bp::make_function(&ActionModelQuadruped::get_A, bp::return_internal_reference<>()),
                      "get A matrix")
