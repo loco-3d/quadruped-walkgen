@@ -10,37 +10,41 @@ ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
     : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(12), 12, 24)
   {
   // Model parameters
-  mu = 0.7 ; 
-  dt_ = 0.02 ; 
-  mass = 2.50000279 ; 
-  min_fz_in_contact = 0.0 ; 
+  mu = Scalar(0.7) ; 
+  dt_ = Scalar(0.02) ; 
+  mass = Scalar(2.50000279) ; 
+  min_fz_in_contact = Scalar(0.0) ; 
 
   // Matrix model initialization
-  g << 0.,0.,0. ,0.,0.,0., 0.,0.,-9.81*dt_ ,0.,0.,0. ; 
-  gI << 0.00578574,0.,0.,       
-        0., 0.01938108, 0.,
-        0.,0.,0.02476124;
-  A << Eigen::Matrix<Scalar, 12, 12>::Identity() ; 
-  A.block(0,6,6,6) << Eigen::Matrix<Scalar, 6, 6>::Identity()*dt_ ; 
-  B << Eigen::Matrix<Scalar, 12, 12>::Zero() ; 
-  lever_arms << Eigen::Matrix<Scalar, 3, 4>::Zero() ; 
-  R << Eigen::Matrix<Scalar, 3, 3>::Zero() ; 
-  lever_tmp << 0.,0.,0. ;
-  R_tmp << Eigen::Matrix<Scalar, 3, 3>::Zero() ; 
+  g.setZero() ;
+  g[8] = Scalar(-9.81)*dt_ ;
+  gI.setZero() ; 
+  gI.diagonal() << Scalar(0.00578574) , Scalar(0.01938108) , Scalar(0.02476124) ; 
+  A.setIdentity() ; 
+  A.topRightCorner(6,6) << Eigen::Matrix<Scalar, 6, 6>::Identity()*dt_ ; 
+  B.setZero() ; 
+  lever_arms.setZero() ; 
+  R.setZero() ; 
+ 
 
   // Weight vectors initialization
-  force_weights_ << Eigen::Matrix<Scalar, 12, 1>::Constant(12,1,0.2);
-  state_weights_ << 1., 1.,150.,35.,30.,8.,20.,20.,15.,4.,4.,8.  ; 
-  friction_weight_ = 5 ;
+  force_weights_.setConstant(0.2);
+  state_weights_ << Scalar(1.)  , Scalar(1.) , Scalar(150.) , Scalar(35.),
+                    Scalar(30.) , Scalar(8.) , Scalar(20.)  , Scalar(20.) , 
+                    Scalar(15.) , Scalar(4.) , Scalar(4.)   , Scalar(8.)  ; 
+  friction_weight_ = Scalar(5) ;
   
   // UpperBound vector 
-  ub << Eigen::Matrix<Scalar, 20, 1 >::Zero() ; 
+  ub.setZero() ; 
 
   // Temporary vector used 
-  Fa_x_u << Eigen::Matrix<Scalar, 20, 1>::Zero() ; 
-  rub_ << Eigen::Matrix<Scalar, 20, 1>::Zero() ; 
-  rub_max_ << Eigen::Matrix<Scalar, 20, 1>::Zero() ;
-  Arr << Eigen::Matrix<Scalar, 20, 20>::Zero() ; 
+  Fa_x_u.setZero() ; 
+  rub_.setZero() ; 
+  rub_max_.setZero() ;
+  Arr.setZero() ; 
+  r.setZero() ;
+  lever_tmp.setZero() ;
+  R_tmp.setZero() ; 
 }
 
 
@@ -63,12 +67,14 @@ void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::Ac
 
   ActionDataQuadrupedTpl<Scalar>* d = static_cast<ActionDataQuadrupedTpl<Scalar>*>(data.get());
  
-  // Discrete dynamic 
-  d->xnext << A*x + B*u + g; // can be improved with block computation
-
+  // Discrete dynamic : A*x + B*u + g
+  d->xnext << A.diagonal().cwiseProduct(x) + g ; 
+  d->xnext.template head<6>() = d->xnext.template head<6>() + A.topRightCorner(6,6).diagonal().cwiseProduct(x.tail(6)) ;
+  d->xnext.template tail<6>() = d->xnext.template tail<6>() + B.block(6,0,6,12)*u;
+  
   // Residual cost on the state and force norm
-  d->r.template head<12>() =  state_weights_.asDiagonal() * (x - xref_);
-  d->r.template tail<12>() =  force_weights_.asDiagonal() * u;
+  d->r.template head<12>() =  state_weights_.cwiseProduct(x - xref_);
+  d->r.template tail<12>() =  force_weights_.cwiseProduct(u);
 
   // Friction cone 
   for (int i=0; i<4; i=i+1){
@@ -76,10 +82,10 @@ void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::Ac
                               u(3*i+1) - mu*u(3*i+2) , -u(3*i+1) - mu*u(3*i+2),
                               -u(3*i+2) ;                             
   }
-  rub_max_ = (Fa_x_u - ub).array().max(0.);   
+  rub_max_ = (Fa_x_u - ub).cwiseMax(0.)   ;
   
   // Cost computation 
-  d->cost = 0.5 * d->r.transpose() * d->r     + friction_weight_ * Scalar(0.5) * rub_max_.matrix().squaredNorm();
+  d->cost = 0.5 * d->r.transpose() * d->r     + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm();
 }
 
 
@@ -96,41 +102,29 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
                  << "u has wrong dimension (it should be " + std::to_string(nu_) + ")");
   }
 
-  ActionDataQuadrupedTpl<Scalar>* d = static_cast<ActionDataQuadrupedTpl<Scalar>*>(data.get());
-
-  // Matrix friction cone hessian
-  Arr.diagonal() =  ((Fa_x_u - ub).array() >= 0.).matrix().template cast<Scalar>() ; 
+  ActionDataQuadrupedTpl<Scalar>* d = static_cast<ActionDataQuadrupedTpl<Scalar>*>(data.get());  
   
-  // Cost derivatives
+  // Cost derivatives : Lx
   d->Lx = (state_weights_.array()* d->r.template head<12>().array()).matrix() ;
 
-  Scalar r1 = friction_weight_*rub_max_(0) ; 
-  Scalar r2 = friction_weight_*rub_max_(1) ; 
-  Scalar r3 = friction_weight_*rub_max_(2) ; 
-  Scalar r4 = friction_weight_*rub_max_(3) ; 
-  Scalar r5 = friction_weight_*rub_max_(4) ; 
-  d->Lu.block(0,0,3,1) << r1 - r2 , r3 - r4 , -mu*(r1 + r2 + r3 + r4 ) - r5 ;  
-  for (int i=1; i<4; i=i+1){
-    r1 = friction_weight_*rub_max_(5*i) ; 
-    r2 = friction_weight_*rub_max_(5*i+1) ; 
-    r3 = friction_weight_*rub_max_(5*i+2) ; 
-    r4 = friction_weight_*rub_max_(5*i+3) ; 
-    r5 = friction_weight_*rub_max_(5*i+4) ; 
-    d->Lu.block(i*3,0,3,1) << r1 - r2 , r3 - r4 , -mu*(r1 + r2 + r3 + r4 ) - r5 ; 
+  // Cost derivative : Lu
+  for (int i=0; i<4; i=i+1){
+    r = friction_weight_*rub_max_.segment(5*i,5) ; 
+    d->Lu.block(i*3,0,3,1) << r[1] - r[2] , r[3] - r[4] , -mu*(r[1] + r[2] + r[3] + r[4] ) - r[5] ; 
   } 
   d->Lu += (force_weights_.array()*d->r.template tail<12>().array()).matrix() ; 
   
+  // Hessian : Lxx
   d->Lxx.diagonal() = (state_weights_.array() * state_weights_.array()).matrix() ;  
   
+  // Hessian : Luu
+  // Matrix friction cone hessian (20x12)
+  Arr.diagonal() =  ((Fa_x_u - ub).array() >= 0.).matrix().template cast<Scalar>() ; 
   for (int i=0; i<4; i=i+1){
-      r1 = friction_weight_*Arr(5*i,5*i) ; 
-      r2 = friction_weight_*Arr(5*i+1,5*i+1) ; 
-      r3 = friction_weight_*Arr(5*i+2,5*i+2) ; 
-      r4 = friction_weight_*Arr(5*i+3,5*i+3) ; 
-      r5 = friction_weight_*Arr(5*i+4,5*i+4) ; 
-      d->Luu.block(3*i,3*i,3,3) << r1 + r2 , 0.0 , mu*(r2 - r1 ),
-                                    0.0,  r3 + r4 , mu*(r4 - r3 ), 
-                                  mu*(r2 - r1 ) , mu*(r4 - r3) , mu*mu*(r1 + r2 + r3 + r4) + r5  ; 
+      r = friction_weight_*Arr.diagonal().segment(5*i,5) ; 
+      d->Luu.block(3*i,3*i,3,3) << r[1] + r[2] , 0.0 , mu*(r[2] - r[1] ),
+                                    0.0,  r[3] + r[4] , mu*(r[4] - r[3] ), 
+                                  mu*(r[2] - r[1] ) , mu*(r[4] - r[3]) , mu*mu*(r[1] + r[2] + r[3] + r[4]) + r[5]  ; 
   }
   d->Luu.diagonal() = d->Luu.diagonal() + (force_weights_.array() * force_weights_.array()).matrix() ;
 
@@ -203,7 +197,7 @@ const Scalar& ActionModelQuadrupedTpl<Scalar>::get_mass() const {
 }
 template <typename Scalar>
 void ActionModelQuadrupedTpl<Scalar>::set_mass(const Scalar& m) {
-  // The model need to be updated 
+  // The model need to be updated after this changed
   mass = m; 
 }
 
@@ -213,7 +207,7 @@ const Scalar& ActionModelQuadrupedTpl<Scalar>::get_dt() const {
 }
 template <typename Scalar>
 void ActionModelQuadrupedTpl<Scalar>::set_dt(const Scalar& dt) {
-  // The model need to be updated 
+  // The model need to be updated after this changed
   dt_ = dt; 
 }
 
@@ -223,7 +217,7 @@ const typename Eigen::Matrix<Scalar, 3, 3>& ActionModelQuadrupedTpl<Scalar>::get
 }
 template <typename Scalar>
 void ActionModelQuadrupedTpl<Scalar>::set_gI(const typename MathBase::Matrix3s& inertia_matrix) {
-  // The model need to be updated 
+  // The model need to be updated after this changed
   if (static_cast<std::size_t>(inertia_matrix.size()) != 9) {
     throw_pretty("Invalid argument: "
                  << "gI has wrong dimension : 3x3");
@@ -233,11 +227,12 @@ void ActionModelQuadrupedTpl<Scalar>::set_gI(const typename MathBase::Matrix3s& 
 
 template <typename Scalar>
 const Scalar& ActionModelQuadrupedTpl<Scalar>::get_min_fz_contact() const {
+  // The model need to be updated after this changed
   return min_fz_in_contact;
 }
 template <typename Scalar>
 void ActionModelQuadrupedTpl<Scalar>::set_min_fz_contact(const Scalar& min_fz) {
-  // The model need to be updated 
+  // The model need to be updated after this changed
   min_fz_in_contact = min_fz; 
 }
 
@@ -287,8 +282,10 @@ void ActionModelQuadrupedTpl<Scalar>::update_model(const Eigen::Ref<const typena
 
   for (int i=0; i<4; i=i+1){
     if (S(i,0) != 0) {
-      // Test fz > 0.5 plutot que fz > 0.0
-      ub(5*i+4) = - min_fz_in_contact ; 
+      // set limit for normal force, (foot in contact with the ground)
+      ub[5*i+4] = - min_fz_in_contact ; 
+
+      // B update
       B.block(6 , 3*i  , 3,3).diagonal() << dt_ / mass  ,  dt_ / mass  ,  dt_ / mass  ; 
       lever_tmp = lever_arms.block(0,i,3,1) - xref.block(0,0,3,1) ;
       R_tmp << 0.0, -lever_tmp[2], lever_tmp[1],
@@ -296,9 +293,10 @@ void ActionModelQuadrupedTpl<Scalar>::update_model(const Eigen::Ref<const typena
       B.block(9 , 3*i  , 3,3) << dt_ * R* R_tmp; 
     }
     else{
-      ub(5*i+4) = 0.0 ; 
-      B.block(6 , 3*i  , 3,3) << Eigen::Matrix<Scalar, 3, 3>::Zero();
-      B.block(9 , 3*i  , 3,3) << Eigen::Matrix<Scalar, 3, 3>::Zero();
+      // set limit for normal force at 0.0 
+      ub[5*i+4] = 0.0 ; 
+      B.block(6 , 3*i  , 3,3).setZero();
+      B.block(9 , 3*i  , 3,3).setZero() ; 
     };
   } ; 
 }

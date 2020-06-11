@@ -103,6 +103,7 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   typename Eigen::Matrix<Scalar, 20, 1 > rub_ ; 
   typename Eigen::Matrix<Scalar, 20, 1 > rub_max_ ; 
   typename Eigen::Matrix<Scalar, 20, 20 > Arr ; 
+  typename Eigen::Matrix<Scalar, 5, 1 > r ; 
 };
 
 template <typename _Scalar>
