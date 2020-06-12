@@ -2,6 +2,12 @@
 
 The objective of this project is the writing of a crocoddyl class in C ++ to use it in a simulation of the quadruped. It is based on a simplified dynamical model of the quadruped and used to solve a MPC problem. 
 
+To install :
+mkdir build_
+cd build_
+cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=your path
+make install
+
 To run the exemple in pyhton, from the directory exemple : 
 python3 exemple_simple.py
 
