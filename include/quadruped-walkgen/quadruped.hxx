@@ -10,7 +10,7 @@ ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
     : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(12), 12, 24)
   {
   // Model parameters
-  mu = Scalar(0.7) ; 
+  mu = Scalar(1) ; 
   dt_ = Scalar(0.02) ; 
   mass = Scalar(2.50000279) ; 
   min_fz_in_contact = Scalar(0.0) ; 
@@ -32,7 +32,7 @@ ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
   state_weights_ << Scalar(1.)  , Scalar(1.) , Scalar(150.) , Scalar(35.),
                     Scalar(30.) , Scalar(8.) , Scalar(20.)  , Scalar(20.) , 
                     Scalar(15.) , Scalar(4.) , Scalar(4.)   , Scalar(8.)  ; 
-  friction_weight_ = Scalar(5) ;
+  friction_weight_ = Scalar(10) ;
   
   // UpperBound vector 
   ub.setZero() ; 
@@ -109,10 +109,15 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
 
   // Cost derivative : Lu
   for (int i=0; i<4; i=i+1){
-    r = friction_weight_*rub_max_.segment(5*i,5) ; 
-    d->Lu.block(i*3,0,3,1) << r[1] - r[2] , r[3] - r[4] , -mu*(r[1] + r[2] + r[3] + r[4] ) - r[5] ; 
-  } 
-  d->Lu += (force_weights_.array()*d->r.template tail<12>().array()).matrix() ; 
+    // r << friction_weight_*rub_max_.segment(5*i,5) ; 
+    r[1] = friction_weight_*rub_max_[5*i] ;
+    r[2] = friction_weight_*rub_max_[5*i + 1] ;
+    r[3] = friction_weight_*rub_max_[5*i + 2] ;
+    r[4] = friction_weight_*rub_max_[5*i + 3] ;
+    r[5] = friction_weight_*rub_max_[5*i + 4] ;
+    d->Lu.block(i*3,0,3,1) << r[1] - r[2] , r[3] - r[4] , -mu*(r[1] + r[2] + r[3] + r[4] ) - r[5] ;
+  }  
+  d->Lu = d->Lu + (force_weights_.array()*d->r.template tail<12>().array()).matrix() ; 
   
   // Hessian : Lxx
   d->Lxx.diagonal() = (state_weights_.array() * state_weights_.array()).matrix() ;  
@@ -121,10 +126,15 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
   // Matrix friction cone hessian (20x12)
   Arr.diagonal() =  ((Fa_x_u - ub).array() >= 0.).matrix().template cast<Scalar>() ; 
   for (int i=0; i<4; i=i+1){
-      r = friction_weight_*Arr.diagonal().segment(5*i,5) ; 
-      d->Luu.block(3*i,3*i,3,3) << r[1] + r[2] , 0.0 , mu*(r[2] - r[1] ),
-                                    0.0,  r[3] + r[4] , mu*(r[4] - r[3] ), 
-                                  mu*(r[2] - r[1] ) , mu*(r[4] - r[3]) , mu*mu*(r[1] + r[2] + r[3] + r[4]) + r[5]  ; 
+    // r = friction_weight_*Arr.diagonal().segment(5*i,5) ; 
+    r[1] = friction_weight_*Arr.diagonal()[5*i] ;
+    r[2] = friction_weight_*Arr.diagonal()[5*i+1] ;
+    r[3] = friction_weight_*Arr.diagonal()[5*i+2] ;
+    r[4] = friction_weight_*Arr.diagonal()[5*i+3] ;
+    r[5] = friction_weight_*Arr.diagonal()[5*i+4] ;
+    d->Luu.block(3*i,3*i,3,3) << r[1] + r[2] , 0.0 , mu*(r[2] - r[1] ),
+                                  0.0,  r[3] + r[4] , mu*(r[4] - r[3] ), 
+                                mu*(r[2] - r[1] ) , mu*(r[4] - r[3]) , mu*mu*(r[1] + r[2] + r[3] + r[4]) + r[5]  ; 
   }
   d->Luu.diagonal() = d->Luu.diagonal() + (force_weights_.array() * force_weights_.array()).matrix() ;
 
