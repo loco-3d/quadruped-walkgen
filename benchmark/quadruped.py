@@ -9,8 +9,8 @@ import sys
 
 
 N = 16  # number of nodes
-T = int(sys.argv[1]) if (len(sys.argv) > 1) else int(1000)  # number of trials
-MAXITER = int(sys.argv[2]) if (len(sys.argv) > 1) else int(5)  # number of maximum iteration
+T = int(sys.argv[1]) if (len(sys.argv) > 1) else int(5000)  # number of trials
+MAXITER = int(sys.argv[2]) if (len(sys.argv) > 1) else int(1)  # number of maximum iteration
 
 # Gait Matrix
 gait = np.zeros((6, 5))
