@@ -10,6 +10,9 @@ SET(${PROJECT_NAME}_PYTHON_BINDINGS_SOURCES
   core.cpp
   action-base.cpp
   quadruped.cpp
+  quadruped_nl.cpp
+  quadruped_augmented.cpp
+  quadruped_step.cpp
   )
 ADD_LIBRARY(${PYTHON_DIR}_pywrap SHARED ${${PROJECT_NAME}_PYTHON_BINDINGS_SOURCES})
 SET_TARGET_PROPERTIES(${PYTHON_DIR}_pywrap PROPERTIES SUFFIX ${PYTHON_EXT_SUFFIX})

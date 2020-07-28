@@ -18,6 +18,9 @@ namespace bp = boost::python;
 
 void exposeActionAbstract();
 void exposeActionQuadruped();
+void exposeActionQuadrupedNonLinear() ; 
+void exposeActionQuadrupedAugmented() ; 
+void exposeActionQuadrupedStep() ; 
 
 void exposeCore();
 

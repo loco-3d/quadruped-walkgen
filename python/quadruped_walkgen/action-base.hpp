@@ -10,6 +10,9 @@
 #define BINDINGS_PYTHON_CROCODDYL_CORE_ACTION_BASE_HPP_
 
 #include <quadruped-walkgen/quadruped.hpp>
+#include <quadruped-walkgen/quadruped_nl.hpp>
+#include <quadruped-walkgen/quadruped_augmented.hpp>
+#include <quadruped-walkgen/quadruped_step.hpp>
 #include "crocoddyl/core/utils/exception.hpp"
 
 namespace quadruped_walkgen {

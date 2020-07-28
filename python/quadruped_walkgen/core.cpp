@@ -14,6 +14,9 @@ namespace python {
 void exposeCore() {
   exposeActionAbstract();
   exposeActionQuadruped();
+  exposeActionQuadrupedNonLinear();
+  exposeActionQuadrupedAugmented() ; 
+  exposeActionQuadrupedStep() ; 
 }
 
 }  // namespace python

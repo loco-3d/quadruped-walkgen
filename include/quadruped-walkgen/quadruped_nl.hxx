@@ -1,12 +1,12 @@
-#ifndef __quadruped_walkgen_quadruped_hxx__
-#define __quadruped_walkgen_quadruped_hxx__
+#ifndef __quadruped_walkgen_quadruped_nl_hxx__
+#define __quadruped_walkgen_quadruped_nl_hxx__
 
 #include "crocoddyl/core/utils/exception.hpp"
 
 
 namespace quadruped_walkgen  {
 template <typename Scalar>
-ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
+ActionModelQuadrupedNonLinearTpl<Scalar>::ActionModelQuadrupedNonLinearTpl()
     : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(12), 12, 24)
   {
   // Model parameters
@@ -45,15 +45,20 @@ ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
   r.setZero() ;
   lever_tmp.setZero() ;
   R_tmp.setZero() ; 
+  gait.setZero() ; 
+  base_vector_x << Scalar(1.) , Scalar(0.) , Scalar(0.) ;
+  base_vector_y << Scalar(0.) , Scalar(1.) , Scalar(0.) ;
+  base_vector_z << Scalar(0.) , Scalar(0.) , Scalar(1.) ; 
+  forces_3d.setZero() ; 
 }
 
 
 template <typename Scalar>
-ActionModelQuadrupedTpl<Scalar>::~ActionModelQuadrupedTpl() {}
+ActionModelQuadrupedNonLinearTpl<Scalar>::~ActionModelQuadrupedNonLinearTpl() {}
 
 
 template <typename Scalar>
-void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::ActionDataAbstractTpl<Scalar> >& data,
+void ActionModelQuadrupedNonLinearTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::ActionDataAbstractTpl<Scalar> >& data,
                                           const Eigen::Ref<const typename MathBase::VectorXs>& x,
                                           const Eigen::Ref<const typename MathBase::VectorXs>& u) {
   if (static_cast<std::size_t>(x.size()) != state_->get_nx()) {
@@ -65,7 +70,18 @@ void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::Ac
                  << "u has wrong dimension (it should be " + std::to_string(nu_) + ")");
   }
 
-  ActionDataQuadrupedTpl<Scalar>* d = static_cast<ActionDataQuadrupedTpl<Scalar>*>(data.get());
+  ActionDataQuadrupedNonLinearTpl<Scalar>* d = static_cast<ActionDataQuadrupedNonLinearTpl<Scalar>*>(data.get());
+
+  //  Update B : 
+  for (int i=0; i<4; i=i+1){
+    if (gait(i,0) != 0) {
+      lever_tmp = lever_arms.block(0,i,3,1) - x.block(0,0,3,1) ;
+      R_tmp << 0.0, -lever_tmp[2], lever_tmp[1],
+      lever_tmp[2], 0.0, -lever_tmp[0], -lever_tmp[1], lever_tmp[0], 0.0 ; 
+      B.block(9 , 3*i  , 3,3) << dt_ * R* R_tmp; 
+    }    
+  } ; 
+
  
   // Discrete dynamic : A*x + B*u + g
   d->xnext << A.diagonal().cwiseProduct(x) + g ; 
@@ -90,7 +106,7 @@ void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::Ac
 
 
 template <typename Scalar>
-void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl::ActionDataAbstractTpl<Scalar> >& data,
+void ActionModelQuadrupedNonLinearTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl::ActionDataAbstractTpl<Scalar> >& data,
                                               const Eigen::Ref<const typename MathBase::VectorXs>& x,
                                               const Eigen::Ref<const typename MathBase::VectorXs>& u) {
   if (static_cast<std::size_t>(x.size()) != state_->get_nx()) {
@@ -101,14 +117,8 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
     throw_pretty("Invalid argument: "
                  << "u has wrong dimension (it should be " + std::to_string(nu_) + ")");
   }
-  for (int i=0; i<4; i=i+1){
-     Fa_x_u.segment(5*i,5) << u(3*i) - mu*u(3*i+2) , -u(3*i) - mu*u(3*i+2),
-                              u(3*i+1) - mu*u(3*i+2) , -u(3*i+1) - mu*u(3*i+2),
-                              -u(3*i+2) ;                             
-  }
-  rub_max_ = (Fa_x_u - ub).cwiseMax(0.)   ;
-  
-  ActionDataQuadrupedTpl<Scalar>* d = static_cast<ActionDataQuadrupedTpl<Scalar>*>(data.get());  
+
+  ActionDataQuadrupedNonLinearTpl<Scalar>* d = static_cast<ActionDataQuadrupedNonLinearTpl<Scalar>*>(data.get());  
   
   // Cost derivatives : Lx
   d->Lx = (state_weights_.array()* d->r.template head<12>().array()).matrix() ;
@@ -146,14 +156,23 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
 
   // Dynamic derivatives
   d->Fx << A;
-  d->Fu << B;  
+
+  for (int i=0; i<4; i=i+1){
+    if (gait(i,0) != 0) {
+      forces_3d = u.block(3*i,0,3,1) ; 
+      d->Fx.block(9,0,3,1) += - dt_ * R *( base_vector_x.cross(forces_3d) ) ;
+      d->Fx.block(9,1,3,1) += - dt_ * R *( base_vector_y.cross(forces_3d) ) ;
+      d->Fx.block(9,2,3,1) += - dt_ * R *( base_vector_z.cross(forces_3d) ) ;
+    }
+  }
+  d->Fu << B;
 }
 
 
 
 template <typename Scalar>
-boost::shared_ptr<crocoddyl::ActionDataAbstractTpl<Scalar> > ActionModelQuadrupedTpl<Scalar>::createData() {
-  return boost::make_shared<ActionDataQuadrupedTpl<Scalar> >(this);
+boost::shared_ptr<crocoddyl::ActionDataAbstractTpl<Scalar> > ActionModelQuadrupedNonLinearTpl<Scalar>::createData() {
+  return boost::make_shared<ActionDataQuadrupedNonLinearTpl<Scalar> >(this);
 }
 
 ////////////////////////////////
@@ -161,11 +180,11 @@ boost::shared_ptr<crocoddyl::ActionDataAbstractTpl<Scalar> > ActionModelQuadrupe
 ////////////////////////////////
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 12, 1>& ActionModelQuadrupedTpl<Scalar>::get_force_weights() const {
+const typename Eigen::Matrix<Scalar, 12, 1>& ActionModelQuadrupedNonLinearTpl<Scalar>::get_force_weights() const {
   return force_weights_;
 }
 template <typename Scalar>
-void ActionModelQuadrupedTpl<Scalar>::set_force_weights(const typename MathBase::VectorXs& weights) {
+void ActionModelQuadrupedNonLinearTpl<Scalar>::set_force_weights(const typename MathBase::VectorXs& weights) {
   if (static_cast<std::size_t>(weights.size()) != state_->get_nx()) {
     throw_pretty("Invalid argument: "
                  << "Weights vector has wrong dimension (it should be " + std::to_string(state_->get_nx()) + ")");
@@ -175,11 +194,11 @@ void ActionModelQuadrupedTpl<Scalar>::set_force_weights(const typename MathBase:
 
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 12, 1>& ActionModelQuadrupedTpl<Scalar>::get_state_weights() const {
+const typename Eigen::Matrix<Scalar, 12, 1>& ActionModelQuadrupedNonLinearTpl<Scalar>::get_state_weights() const {
   return state_weights_;
 }
 template <typename Scalar>
-void ActionModelQuadrupedTpl<Scalar>::set_state_weights(const typename MathBase::VectorXs& weights) {
+void ActionModelQuadrupedNonLinearTpl<Scalar>::set_state_weights(const typename MathBase::VectorXs& weights) {
   if (static_cast<std::size_t>(weights.size()) != state_->get_nx()) {
     throw_pretty("Invalid argument: "
                  << "Weights vector has wrong dimension (it should be " + std::to_string(state_->get_nx()) + ")");
@@ -189,50 +208,50 @@ void ActionModelQuadrupedTpl<Scalar>::set_state_weights(const typename MathBase:
 
 
 template <typename Scalar>
-const Scalar& ActionModelQuadrupedTpl<Scalar>::get_friction_weight() const {
+const Scalar& ActionModelQuadrupedNonLinearTpl<Scalar>::get_friction_weight() const {
   return friction_weight_;
 }
 template <typename Scalar>
-void ActionModelQuadrupedTpl<Scalar>::set_friction_weight(const Scalar& weight) {
+void ActionModelQuadrupedNonLinearTpl<Scalar>::set_friction_weight(const Scalar& weight) {
   friction_weight_ = weight;
 }
 
 
 template <typename Scalar>
-const Scalar& ActionModelQuadrupedTpl<Scalar>::get_mu() const {
+const Scalar& ActionModelQuadrupedNonLinearTpl<Scalar>::get_mu() const {
   return mu;
 }
 template <typename Scalar>
-void ActionModelQuadrupedTpl<Scalar>::set_mu(const Scalar& mu_coeff) {
+void ActionModelQuadrupedNonLinearTpl<Scalar>::set_mu(const Scalar& mu_coeff) {
   mu = mu_coeff; 
 }
 
 template <typename Scalar>
-const Scalar& ActionModelQuadrupedTpl<Scalar>::get_mass() const {
+const Scalar& ActionModelQuadrupedNonLinearTpl<Scalar>::get_mass() const {
   return mass;
 }
 template <typename Scalar>
-void ActionModelQuadrupedTpl<Scalar>::set_mass(const Scalar& m) {
+void ActionModelQuadrupedNonLinearTpl<Scalar>::set_mass(const Scalar& m) {
   // The model need to be updated after this changed
   mass = m; 
 }
 
 template <typename Scalar>
-const Scalar& ActionModelQuadrupedTpl<Scalar>::get_dt() const {
+const Scalar& ActionModelQuadrupedNonLinearTpl<Scalar>::get_dt() const {
   return dt_;
 }
 template <typename Scalar>
-void ActionModelQuadrupedTpl<Scalar>::set_dt(const Scalar& dt) {
+void ActionModelQuadrupedNonLinearTpl<Scalar>::set_dt(const Scalar& dt) {
   // The model need to be updated after this changed
   dt_ = dt; 
 }
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 3, 3>& ActionModelQuadrupedTpl<Scalar>::get_gI() const {
+const typename Eigen::Matrix<Scalar, 3, 3>& ActionModelQuadrupedNonLinearTpl<Scalar>::get_gI() const {
   return gI;
 }
 template <typename Scalar>
-void ActionModelQuadrupedTpl<Scalar>::set_gI(const typename MathBase::Matrix3s& inertia_matrix) {
+void ActionModelQuadrupedNonLinearTpl<Scalar>::set_gI(const typename MathBase::Matrix3s& inertia_matrix) {
   // The model need to be updated after this changed
   if (static_cast<std::size_t>(inertia_matrix.size()) != 9) {
     throw_pretty("Invalid argument: "
@@ -242,12 +261,12 @@ void ActionModelQuadrupedTpl<Scalar>::set_gI(const typename MathBase::Matrix3s& 
 }
 
 template <typename Scalar>
-const Scalar& ActionModelQuadrupedTpl<Scalar>::get_min_fz_contact() const {
+const Scalar& ActionModelQuadrupedNonLinearTpl<Scalar>::get_min_fz_contact() const {
   // The model need to be updated after this changed
   return min_fz_in_contact;
 }
 template <typename Scalar>
-void ActionModelQuadrupedTpl<Scalar>::set_min_fz_contact(const Scalar& min_fz) {
+void ActionModelQuadrupedNonLinearTpl<Scalar>::set_min_fz_contact(const Scalar& min_fz) {
   // The model need to be updated after this changed
   min_fz_in_contact = min_fz; 
 }
@@ -257,11 +276,11 @@ void ActionModelQuadrupedTpl<Scalar>::set_min_fz_contact(const Scalar& min_fz) {
 //// get A & B matrix /////
 ///////////////////////////
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 12, 12>& ActionModelQuadrupedTpl<Scalar>::get_A() const {
+const typename Eigen::Matrix<Scalar, 12, 12>& ActionModelQuadrupedNonLinearTpl<Scalar>::get_A() const {
   return A;
 }
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 12, 12>& ActionModelQuadrupedTpl<Scalar>::get_B() const {
+const typename Eigen::Matrix<Scalar, 12, 12>& ActionModelQuadrupedNonLinearTpl<Scalar>::get_B() const {
   return B;
 }
 
@@ -271,7 +290,7 @@ const typename Eigen::Matrix<Scalar, 12, 12>& ActionModelQuadrupedTpl<Scalar>::g
 ////////////////////////
 
 template <typename Scalar>
-void ActionModelQuadrupedTpl<Scalar>::update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet  ,
+void ActionModelQuadrupedNonLinearTpl<Scalar>::update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet  ,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& S ) {
   if (static_cast<std::size_t>(l_feet.size()) != 12) {
@@ -288,6 +307,7 @@ void ActionModelQuadrupedTpl<Scalar>::update_model(const Eigen::Ref<const typena
   }
 
   xref_ = xref ; 
+  gait = S ;
 
   R_tmp << cos(xref(5,0)),-sin(xref(5,0)),0,
       sin(xref(5,0)),cos(xref(5,0)),0,
@@ -303,14 +323,18 @@ void ActionModelQuadrupedTpl<Scalar>::update_model(const Eigen::Ref<const typena
 
       // B update
       B.block(6 , 3*i  , 3,3).diagonal() << dt_ / mass  ,  dt_ / mass  ,  dt_ / mass  ; 
-      lever_tmp = lever_arms.block(0,i,3,1) - xref.block(0,0,3,1) ;
-      R_tmp << 0.0, -lever_tmp[2], lever_tmp[1],
-      lever_tmp[2], 0.0, -lever_tmp[0], -lever_tmp[1], lever_tmp[0], 0.0 ; 
-      B.block(9 , 3*i  , 3,3) << dt_ * R* R_tmp; 
+      
+      //  Assuption 1 : levers arms not depends on the state, but on the predicted position (xfref)
+      //  --> B will be updated with the update_B method for each calc function 
+
+      // lever_tmp = lever_arms.block(0,i,3,1) - xref.block(0,0,3,1) ;
+      // R_tmp << 0.0, -lever_tmp[2], lever_tmp[1],
+      // lever_tmp[2], 0.0, -lever_tmp[0], -lever_tmp[1], lever_tmp[0], 0.0 ; 
+      // B.block(9 , 3*i  , 3,3) << dt_ * R* R_tmp; 
     }
     else{
       // set limit for normal force at 0.0 
-      ub[5*i+4] = Scalar(0.0) ; 
+      ub[5*i+4] = 0.0 ; 
       B.block(6 , 3*i  , 3,3).setZero();
       B.block(9 , 3*i  , 3,3).setZero() ; 
     };
