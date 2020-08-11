@@ -14,10 +14,20 @@ ActionModelQuadrupedStepTpl<Scalar>::ActionModelQuadrupedStepTpl()
   state_weights_ << Scalar(1.)  , Scalar(1.) , Scalar(150.) , Scalar(35.),
                     Scalar(30.) , Scalar(8.) , Scalar(20.)  , Scalar(20.) , 
                     Scalar(15.) , Scalar(4.) , Scalar(4.)   , Scalar(8.)  ; 
-  shoulder_weights_.setConstant(1) ; 
+  shoulder_weights_.setConstant(Scalar(1)) ; 
   pshoulder_ <<  Scalar(0.1946) ,  Scalar(0.15005),  Scalar(0.1946) ,  Scalar(-0.15005) ,
                  Scalar(-0.1946),  Scalar(0.15005) , Scalar(-0.1946),  Scalar(-0.15005) ; 
-  step_weights_.setConstant(1) ;
+  pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),  Scalar(-0.1946) , 
+                  Scalar(0.15005) ,  Scalar(-0.15005)  , Scalar(0.15005)  ,  Scalar(-0.15005) ; 
+  pshoulder_tmp.setZero() ; 
+  pcentrifugal_tmp_1.setZero() ; 
+  pcentrifugal_tmp_2.setZero() ; 
+  pcentrifugal_tmp.setZero() ; 
+  centrifugal_term = true ; 
+  symmetry_term = true ; 
+  T_gait = Scalar(0.64) ; 
+  
+  step_weights_.setConstant(Scalar(1)) ;
   
  
 }
@@ -50,7 +60,7 @@ void ActionModelQuadrupedStepTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl
   d->r.template segment<8>(12) = shoulder_weights_.cwiseProduct(x.tail(8) - pshoulder_); 
   d->r.template tail<4>() =  step_weights_.cwiseProduct(u);
 
-  d->cost = 0.5 * d->r.transpose() * d->r   ;
+  d->cost = Scalar(0.5) * d->r.transpose() * d->r   ;
 }
 
 
@@ -150,7 +160,36 @@ void ActionModelQuadrupedStepTpl<Scalar>::set_shoulder_position(const typename M
   pshoulder_ = pos;
 }
 
+template <typename Scalar>
+const bool& ActionModelQuadrupedStepTpl<Scalar>::get_symmetry_term() const {
+  return symmetry_term;
+}
+template <typename Scalar>
+void ActionModelQuadrupedStepTpl<Scalar>::set_symmetry_term(const bool& sym_term) {
+  // The model need to be updated after this changed
+  symmetry_term = sym_term; 
+}
 
+template <typename Scalar>
+const bool& ActionModelQuadrupedStepTpl<Scalar>::get_centrifugal_term() const {
+  return centrifugal_term;
+}
+template <typename Scalar>
+void ActionModelQuadrupedStepTpl<Scalar>::set_centrifugal_term(const bool& cent_term) {
+  // The model need to be updated after this changed
+  centrifugal_term = cent_term; 
+}
+
+template <typename Scalar>
+const Scalar& ActionModelQuadrupedStepTpl<Scalar>::get_T_gait() const {
+  // The model need to be updated after this changed
+  return T_gait;
+}
+template <typename Scalar>
+void ActionModelQuadrupedStepTpl<Scalar>::set_T_gait(const Scalar& T_gait_) {
+  // The model need to be updated after this changed
+  T_gait = T_gait_; 
+}
 
 
 ////////////////////////
@@ -176,9 +215,25 @@ void ActionModelQuadrupedStepTpl<Scalar>::update_model(const Eigen::Ref<const ty
 
   xref_ = xref ; 
 
+  R_tmp << cos(xref(5,0)) ,-sin(xref(5,0)) , Scalar(0),
+      sin(xref(5,0)), cos(xref(5,0)), Scalar(0),
+      Scalar(0),Scalar(0),Scalar(1.0) ; 
+
+   // Centrifual term 
+  pcentrifugal_tmp_1 = xref.block(6,0,3,1) ; 
+  pcentrifugal_tmp_2 = xref.block(9,0,3,1) ; 
+  pcentrifugal_tmp = 0.5*std::sqrt(xref(2,0)/9.81) * pcentrifugal_tmp_1.cross(pcentrifugal_tmp_2) ; 
+  
+
+  for (int i=0; i<4; i=i+1){
+    pshoulder_tmp.block(0,i,2,1) =  R_tmp.block(0,0,2,2)*(pshoulder_0.block(0,i,2,1) +   symmetry_term * 0.25*T_gait*xref.block(6,0,2,1) + centrifugal_term * pcentrifugal_tmp.block(0,0,2,1) );
+    pshoulder_[2*i] = pshoulder_tmp(0,i) +   xref(0,0); 
+    pshoulder_[2*i+1] = pshoulder_tmp(1,i) +  xref(1,0); 
+  }
+
   B.setZero() ; 
 
-  if (S(0,0) == 1) {
+  if (S(0,0) == Scalar(1)) {
     B.block(0,0,2,2).setIdentity() ; 
     B.block(6,2,2,2).setIdentity() ;    
   }

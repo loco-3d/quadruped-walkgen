@@ -49,6 +49,15 @@ class ActionModelQuadrupedStepTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
                     const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& S ) ;
 
+  const bool& get_symmetry_term() const ;
+  void set_symmetry_term(const bool& sym_term) ;
+
+  const bool& get_centrifugal_term() const ;
+  void set_centrifugal_term(const bool& cent_term) ;
+
+  const Scalar& get_T_gait() const;
+  void set_T_gait(const Scalar& T_gait_);
+
 
  protected:
   using Base::has_control_limits_;  //!< Indicates whether any of the control limits
@@ -61,10 +70,14 @@ class ActionModelQuadrupedStepTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
  
  
  private:
+  Scalar T_gait ;
+  bool centrifugal_term ; 
+  bool symmetry_term ; 
 
   typename Eigen::Matrix<Scalar, 12, 1> state_weights_;
   typename Eigen::Matrix<Scalar, 4, 1> step_weights_;  
   typename Eigen::Matrix<Scalar, 8, 1> shoulder_weights_;
+  typename MathBase::Matrix3s R_tmp ;
 
   
   
@@ -73,6 +86,14 @@ class ActionModelQuadrupedStepTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
   typename MathBase::MatrixXs xref_;  
 
   typename Eigen::Matrix<Scalar, 8 , 1 > pshoulder_;  
+  typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_0;  
+  typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_tmp;  
+
+  typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp; 
+  typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_1; 
+  typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_2; 
+
+
 };
 
 template <typename _Scalar>

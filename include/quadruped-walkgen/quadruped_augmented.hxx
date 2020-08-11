@@ -28,16 +28,21 @@ ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl()
  
 
   // Weight vectors initialization
-  force_weights_.setConstant(0.2);
+  force_weights_.setConstant(Scalar(0.2));
   state_weights_ << Scalar(1.)  , Scalar(1.) , Scalar(150.) , Scalar(35.),
                     Scalar(30.) , Scalar(8.) , Scalar(20.)  , Scalar(20.) , 
                     Scalar(15.) , Scalar(4.) , Scalar(4.)   , Scalar(8.)  ; 
   friction_weight_ = Scalar(10) ;
-  shoulder_weights_.setConstant(1) ; 
-  last_position_weights_.setConstant(1) ; 
+  shoulder_weights_.setConstant(Scalar(1)) ; 
+  last_position_weights_.setConstant(Scalar(1)) ; 
   pshoulder_ <<  Scalar(0.1946) ,  Scalar(0.15005),  Scalar(0.1946) ,  Scalar(-0.15005) ,
                  Scalar(-0.1946),  Scalar(0.15005) , Scalar(-0.1946),  Scalar(-0.15005) ; 
-  
+  pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),  Scalar(-0.1946) , 
+                  Scalar(0.15005) ,  Scalar(-0.15005)  , Scalar(0.15005)  ,  Scalar(-0.15005) ; 
+  pshoulder_tmp.setZero() ; 
+  pcentrifugal_tmp_1.setZero() ; 
+  pcentrifugal_tmp_2.setZero() ; 
+  pcentrifugal_tmp.setZero() ; 
   // UpperBound vector 
   ub.setZero() ; 
 
@@ -55,6 +60,11 @@ ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl()
   base_vector_z << Scalar(0.) , Scalar(0.) , Scalar(1.) ; 
   forces_3d.setZero() ; 
   gait_double.setZero() ; 
+
+  // bool to add heuristic for foot position
+  centrifugal_term = true ; 
+  symmetry_term = true ; 
+  T_gait = Scalar(0.64) ; 
 }
 
 
@@ -83,8 +93,8 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calc(const boost::shared_ptr<croc
     if (gait(i,0) != 0) {
       lever_tmp.head(2) = x.block(12 + 2*i ,0,2,1)  ;      
       lever_tmp += - x.block(0,0,3,1) ;
-      R_tmp << 0.0, -lever_tmp[2], lever_tmp[1],
-      lever_tmp[2], 0.0, -lever_tmp[0], -lever_tmp[1], lever_tmp[0], 0.0 ; 
+      R_tmp << Scalar(0.0), -lever_tmp[2], lever_tmp[1],
+      lever_tmp[2], Scalar(0.0), -lever_tmp[0], -lever_tmp[1], lever_tmp[0], Scalar(0.0) ; 
       B.block(9 , 3*i  , 3,3) << dt_ * R* R_tmp; 
     }    
   } ; 
@@ -108,7 +118,7 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calc(const boost::shared_ptr<croc
                               u(3*i+1) - mu*u(3*i+2) , -u(3*i+1) - mu*u(3*i+2),
                               -u(3*i+2) ;                             
   }
-  rub_max_ = (Fa_x_u - ub).cwiseMax(0.)   ;
+  rub_max_ = (Fa_x_u - ub).cwiseMax(Scalar(0.))   ;
   
   // Cost computation 
   d->cost = Scalar(0.5) * d->r.transpose() * d->r     + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm()
@@ -156,7 +166,7 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calcDiff(const boost::shared_ptr<
     
   // Hessian : Luu
   // Matrix friction cone hessian (20x12)
-  Arr.diagonal() =  ((Fa_x_u - ub).array() >= 0.).matrix().template cast<Scalar>() ; 
+  Arr.diagonal() =  ((Fa_x_u - ub).array() >= Scalar(0.)).matrix().template cast<Scalar>() ; 
   for (int i=0; i<4; i=i+1){
     // r = friction_weight_*Arr.diagonal().segment(5*i,5) ; 
     r[1] = friction_weight_*Arr.diagonal()[5*i] ;
@@ -333,6 +343,37 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::set_min_fz_contact(const Scalar& 
   min_fz_in_contact = min_fz; 
 }
 
+template <typename Scalar>
+const bool& ActionModelQuadrupedAugmentedTpl<Scalar>::get_symmetry_term() const {
+  return symmetry_term;
+}
+template <typename Scalar>
+void ActionModelQuadrupedAugmentedTpl<Scalar>::set_symmetry_term(const bool& sym_term) {
+  // The model need to be updated after this changed
+  symmetry_term = sym_term; 
+}
+
+template <typename Scalar>
+const bool& ActionModelQuadrupedAugmentedTpl<Scalar>::get_centrifugal_term() const {
+  return centrifugal_term;
+}
+template <typename Scalar>
+void ActionModelQuadrupedAugmentedTpl<Scalar>::set_centrifugal_term(const bool& cent_term) {
+  // The model need to be updated after this changed
+  centrifugal_term = cent_term; 
+}
+
+template <typename Scalar>
+const Scalar& ActionModelQuadrupedAugmentedTpl<Scalar>::get_T_gait() const {
+  // The model need to be updated after this changed
+  return T_gait;
+}
+template <typename Scalar>
+void ActionModelQuadrupedAugmentedTpl<Scalar>::set_T_gait(const Scalar& T_gait_) {
+  // The model need to be updated after this changed
+  T_gait = T_gait_; 
+}
+
 
 ///////////////////////////
 //// get A & B matrix /////
@@ -378,13 +419,28 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::update_model(const Eigen::Ref<con
   }
   
   
-  R_tmp << cos(xref(5,0)),-sin(xref(5,0)),0,
-      sin(xref(5,0)),cos(xref(5,0)),0,
-      0,0,1.0 ; 
+  R_tmp << cos(xref(5,0)) ,-sin(xref(5,0)) , Scalar(0),
+      sin(xref(5,0)), cos(xref(5,0)), Scalar(0),
+      Scalar(0),Scalar(0),Scalar(1.0) ; 
+
+
+  // Centrifual term 
+  pcentrifugal_tmp_1 = xref.block(6,0,3,1) ; 
+  pcentrifugal_tmp_2 = xref.block(9,0,3,1) ; 
+  pcentrifugal_tmp = 0.5*std::sqrt(xref(2,0)/9.81) * pcentrifugal_tmp_1.cross(pcentrifugal_tmp_2) ; 
   
-  R = (R_tmp*gI).inverse() ; // I_inv  
 
   for (int i=0; i<4; i=i+1){
+    pshoulder_tmp.block(0,i,2,1) =  R_tmp.block(0,0,2,2)*(pshoulder_0.block(0,i,2,1) +   symmetry_term * 0.25*T_gait*xref.block(6,0,2,1) + centrifugal_term * pcentrifugal_tmp.block(0,0,2,1) );
+  }
+  
+  R = (R_tmp*gI).inverse() ; // I_inv 
+
+  for (int i=0; i<4; i=i+1){
+
+    pshoulder_[2*i] = pshoulder_tmp(0,i) + xref(0,0) ; 
+    pshoulder_[2*i+1] = pshoulder_tmp(1,i) + xref(1,0) ; 
+
     if (S(i,0) != 0) {
       // set limit for normal force, (foot in contact with the ground)
       ub[5*i+4] = - min_fz_in_contact ; 
@@ -402,7 +458,7 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::update_model(const Eigen::Ref<con
     }
     else{
       // set limit for normal force at 0.0 
-      ub[5*i+4] = 0.0 ; 
+      ub[5*i+4] = Scalar(0.0) ; 
       B.block(6 , 3*i  , 3,3).setZero();
       B.block(9 , 3*i  , 3,3).setZero() ; 
     };

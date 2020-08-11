@@ -63,6 +63,15 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   const typename Eigen::Matrix<Scalar, 8, 1>& get_shoulder_position() const;
   void set_shoulder_position(const typename MathBase::VectorXs& weights);
 
+  const bool& get_symmetry_term() const ;
+  void set_symmetry_term(const bool& sym_term) ;
+
+  const bool& get_centrifugal_term() const ;
+  void set_centrifugal_term(const bool& cent_term) ;
+
+  const Scalar& get_T_gait() const;
+  void set_T_gait(const Scalar& T_gait_);
+
 
   // Update the model depending if the foot in contact with the ground 
   // or the new lever arms
@@ -90,6 +99,9 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   Scalar mu ;
   Scalar friction_weight_;
   Scalar min_fz_in_contact ; 
+  Scalar T_gait ; 
+  bool centrifugal_term ; 
+  bool symmetry_term ; 
 
   typename Eigen::Matrix<Scalar, 12, 1> force_weights_;
   typename Eigen::Matrix<Scalar, 12, 1> state_weights_;
@@ -109,6 +121,13 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   typename MathBase::MatrixXs xref_;  
 
   typename Eigen::Matrix<Scalar, 8 , 1 > pshoulder_;  
+  typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_0;  
+  typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_tmp;  
+
+  typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp; 
+  typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_1; 
+  typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_2; 
+
   typename Eigen::Matrix<Scalar, 8 , 1 > pref_;  
 
   typename Eigen::Matrix<Scalar, 20, 1 > ub ; 
