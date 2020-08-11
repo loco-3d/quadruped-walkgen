@@ -57,8 +57,13 @@ void exposeActionQuadrupedStep() {
                     bp::make_function(&ActionModelQuadrupedStep::set_shoulder_weights), "Weights on the shoulder term")
       .add_property("stepWeights",
                     bp::make_function(&ActionModelQuadrupedStep::get_step_weights, bp::return_internal_reference<>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_step_weights), "Weights on the command norm")
-    
+                    bp::make_function(&ActionModelQuadrupedStep::set_step_weights), "Weights on the command norm")    
+      .add_property("symmetry_term", bp::make_function(&ActionModelQuadrupedStep::get_symmetry_term, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedStep::set_symmetry_term) , "symmetry term for the foot position heuristic")
+      .add_property("centrifugal_term", bp::make_function(&ActionModelQuadrupedStep::get_centrifugal_term, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedStep::set_centrifugal_term) , "centrifugal term for the foot position heuristic") 
+      .add_property("T_gait", bp::make_function(&ActionModelQuadrupedStep::get_T_gait, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedStep::set_T_gait) , "Gait period, used to compute the symmetry term")  
          ;
      
      

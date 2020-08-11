@@ -81,7 +81,13 @@ void exposeActionQuadrupedAugmented() {
                      "get A matrix")
       .add_property("B",
                     bp::make_function(&ActionModelQuadrupedAugmented::get_B, bp::return_internal_reference<>()),
-                     "get B matrix") ;
+                     "get B matrix")
+      .add_property("symmetry_term", bp::make_function(&ActionModelQuadrupedAugmented::get_symmetry_term, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_symmetry_term) , "symmetry term for the foot position heuristic")
+      .add_property("centrifugal_term", bp::make_function(&ActionModelQuadrupedAugmented::get_centrifugal_term, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_centrifugal_term) , "centrifugal term for the foot position heuristic") 
+      .add_property("T_gait", bp::make_function(&ActionModelQuadrupedAugmented::get_T_gait, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_T_gait) , "Gait period, used to compute the symmetry term") ;
      
      
 
