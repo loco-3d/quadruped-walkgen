@@ -45,6 +45,13 @@ ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
   r.setZero() ;
   lever_tmp.setZero() ;
   R_tmp.setZero() ; 
+
+  // Used for shoulder height weight
+  pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),  Scalar(-0.1946) , 
+                  Scalar(0.15005) ,  Scalar(-0.15005)  , Scalar(0.15005)  ,  Scalar(-0.15005) ; 
+  shoulder_height_limit = Scalar(0.24) ; 
+  shoulder_height_weight = Scalar(100.) ;
+  sh_ub_max_.setZero() ; 
 }
 
 
@@ -83,9 +90,16 @@ void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::Ac
                               -u(3*i+2) ;                             
   }
   rub_max_ = (Fa_x_u - ub).cwiseMax(0.)   ;
+
+  // Shoulder height weight
+  sh_ub_max_ << x(2) + pshoulder_0(1,0)*x(3) - pshoulder_0(0,0)*x(4) - shoulder_height_limit ,
+                x(2) + pshoulder_0(1,1)*x(3) - pshoulder_0(0,1)*x(4) - shoulder_height_limit ,
+                x(2) + pshoulder_0(1,2)*x(3) - pshoulder_0(0,2)*x(4) - shoulder_height_limit , 
+                x(2) + pshoulder_0(1,3)*x(3) - pshoulder_0(0,3)*x(4) - shoulder_height_limit ; 
+  sh_ub_max_ = sh_ub_max_.cwiseMax(Scalar(0.)) ;  
   
   // Cost computation 
-  d->cost = 0.5 * d->r.transpose() * d->r     + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm();
+  d->cost = 0.5 * d->r.transpose() * d->r     + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm() + shoulder_height_weight * Scalar(0.5) * sh_ub_max_.squaredNorm();
 }
 
 
@@ -113,6 +127,28 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
   // Cost derivatives : Lx
   d->Lx = (state_weights_.array()* d->r.template head<12>().array()).matrix() ;
 
+  // Hessian : Lxx
+  d->Lxx.block(2,2,3,3).setZero() ;
+  d->Lxx.diagonal() = (state_weights_.array() * state_weights_.array()).matrix() ;  
+  for (int j=0 ; j<4 ; j=j+1){
+    if (sh_ub_max_[j] > Scalar(0.) ){
+      d->Lx.block(2,0,1,1) += shoulder_height_weight*sh_ub_max_.block(j,0,1,1) ; 
+      d->Lx.block(3,0,1,1) += shoulder_height_weight*pshoulder_0(1,j)*sh_ub_max_.block(j,0,1,1) ; 
+      d->Lx.block(4,0,1,1) += - shoulder_height_weight*pshoulder_0(0,j)*sh_ub_max_.block(j,0,1,1) ; 
+
+      d->Lxx.block(2,2,1,1) += shoulder_height_weight*Eigen::Matrix<Scalar, 1, 1>::Identity() ; 
+      d->Lxx.block(3,3,1,1) += shoulder_height_weight*pshoulder_0(1,j)*pshoulder_0.block(1,j,1,1) ; 
+      d->Lxx.block(4,4,1,1) += shoulder_height_weight*pshoulder_0(0,j)*pshoulder_0.block(0,j,1,1) ; 
+
+      d->Lxx.block(3,4,1,1) += -shoulder_height_weight*pshoulder_0(1,j)*pshoulder_0.block(0,j,1,1) ; 
+      d->Lxx.block(4,3,1,1) += -shoulder_height_weight*pshoulder_0(1,j)*pshoulder_0.block(0,j,1,1) ; 
+      d->Lxx.block(2,3,1,1) += shoulder_height_weight*pshoulder_0.block(1,j,1,1) ; 
+      d->Lxx.block(3,2,1,1) += shoulder_height_weight*pshoulder_0.block(1,j,1,1) ; 
+      d->Lxx.block(2,4,1,1) += -shoulder_height_weight*pshoulder_0.block(0,j,1,1) ; 
+      d->Lxx.block(4,2,1,1) += -shoulder_height_weight*pshoulder_0.block(0,j,1,1) ; 
+    }
+  } 
+
   // Cost derivative : Lu
   for (int i=0; i<4; i=i+1){
     // r << friction_weight_*rub_max_.segment(5*i,5) ; 
@@ -125,8 +161,7 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
   }  
   d->Lu = d->Lu + (force_weights_.array()*d->r.template tail<12>().array()).matrix() ; 
   
-  // Hessian : Lxx
-  d->Lxx.diagonal() = (state_weights_.array() * state_weights_.array()).matrix() ;  
+  
   
   // Hessian : Luu
   // Matrix friction cone hessian (20x12)
@@ -225,6 +260,8 @@ template <typename Scalar>
 void ActionModelQuadrupedTpl<Scalar>::set_dt(const Scalar& dt) {
   // The model need to be updated after this changed
   dt_ = dt; 
+  g[8] = Scalar(-9.81)*dt_ ;
+  A.topRightCorner(6,6) << Eigen::Matrix<Scalar, 6, 6>::Identity()*dt_ ; 
 }
 
 template <typename Scalar>
@@ -263,6 +300,26 @@ const typename Eigen::Matrix<Scalar, 12, 12>& ActionModelQuadrupedTpl<Scalar>::g
 template <typename Scalar>
 const typename Eigen::Matrix<Scalar, 12, 12>& ActionModelQuadrupedTpl<Scalar>::get_B() const {
   return B;
+}
+
+template <typename Scalar>
+const Scalar& ActionModelQuadrupedTpl<Scalar>::get_shoulder_hlim() const {
+  return shoulder_height_limit;
+}
+template <typename Scalar>
+void ActionModelQuadrupedTpl<Scalar>::set_shoulder_hlim(const Scalar& hlim) {
+  // The model need to be updated after this changed
+  shoulder_height_limit = hlim; 
+}
+
+template <typename Scalar>
+const Scalar& ActionModelQuadrupedTpl<Scalar>::get_shoulder_weight() const {
+  return shoulder_height_weight;
+}
+template <typename Scalar>
+void ActionModelQuadrupedTpl<Scalar>::set_shoulder_weight(const Scalar& weight) {
+  // The model need to be updated after this changed
+  shoulder_height_weight = weight; 
 }
 
 

@@ -62,6 +62,10 @@ void exposeActionQuadruped() {
                     bp::make_function(&ActionModelQuadruped::set_mass) , "Mass \n Warning : The model needs to be updated")
       .add_property("dt", bp::make_function(&ActionModelQuadruped::get_dt, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadruped::set_dt) , "Minimum normal force allowed for feet in contact with the ground \n Warning : The model needs to be updated")
+      .add_property("shoulder_hlim", bp::make_function(&ActionModelQuadruped::get_shoulder_hlim, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadruped::set_shoulder_hlim) , "Shoulder height limit ")
+      .add_property("shoulderWeights", bp::make_function(&ActionModelQuadruped::get_shoulder_weight, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadruped::set_shoulder_weight) , "shoulder Weight term (scalar) ")
       .add_property("min_fz", bp::make_function(&ActionModelQuadruped::get_min_fz_contact, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadruped::set_min_fz_contact) , "dt \n Warning : The model needs to be updated")
       .add_property("gI", bp::make_function(&ActionModelQuadruped::get_gI, bp::return_value_policy<bp::return_by_value>()),

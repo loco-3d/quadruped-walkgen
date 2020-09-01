@@ -54,6 +54,13 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
   const Scalar& get_min_fz_contact() const;
   void set_min_fz_contact(const Scalar& min_fz);
 
+  // Set parameter relative to the shoulder height cost
+  const Scalar& get_shoulder_hlim() const;
+  void set_shoulder_hlim(const Scalar& hlim);
+
+  const Scalar& get_shoulder_weight() const;
+  void set_shoulder_weight(const Scalar& weight);
+
 
   // Update the model depending if the foot in contact with the ground 
   // or the new lever arms
@@ -110,6 +117,12 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
   typename Eigen::Matrix<Scalar, 3, 1 > base_vector_y ; 
   typename Eigen::Matrix<Scalar, 3, 1 > base_vector_z ; 
   typename Eigen::Matrix<Scalar, 3, 1 > forces_3d ; 
+
+  // Cost relative to the shoulder height
+  typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_0;  
+  typename Eigen::Matrix<Scalar, 4, 1 > sh_ub_max_ ; 
+  Scalar shoulder_height_weight ; 
+  Scalar shoulder_height_limit ; 
 
 
 };
