@@ -54,9 +54,10 @@ ActionModelQuadrupedNonLinearTpl<Scalar>::ActionModelQuadrupedNonLinearTpl()
   // Used for shoulder height weight
   pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),  Scalar(-0.1946) , 
                   Scalar(0.15005) ,  Scalar(-0.15005)  , Scalar(0.15005)  ,  Scalar(-0.15005) ; 
-  shoulder_height_limit = Scalar(0.24) ; 
-  shoulder_height_weight = Scalar(100.) ;
+  sh_hlim = Scalar(0.225) ; 
+  sh_weight = Scalar(10.) ;
   sh_ub_max_.setZero() ; 
+  psh.setZero() ;
 }
 
 
@@ -86,7 +87,18 @@ void ActionModelQuadrupedNonLinearTpl<Scalar>::calc(const boost::shared_ptr<croc
       R_tmp << 0.0, -lever_tmp[2], lever_tmp[1],
       lever_tmp[2], 0.0, -lever_tmp[0], -lever_tmp[1], lever_tmp[0], 0.0 ; 
       B.block(9 , 3*i  , 3,3) << dt_ * R* R_tmp; 
-    }    
+
+      // Compute pdistance of the shoulder wrt contact point
+      psh.block(0,i,3,1) << x[0] + pshoulder_0(0,i) - pshoulder_0(1,i)*x[5] - lever_arms(0,i), 
+                            x[1] + pshoulder_0(1,i) + pshoulder_0(0,i)*x[5] - lever_arms(1,i), 
+                            x[2] + pshoulder_0(1,i)*x[3] - pshoulder_0(0,i)*x[4] ;
+    }
+    else{
+       // Compute pdistance of the shoulder wrt contact point
+      psh.block(0,i,3,1).setZero() ; 
+    }   
+
+   
   } ; 
 
  
@@ -107,15 +119,18 @@ void ActionModelQuadrupedNonLinearTpl<Scalar>::calc(const boost::shared_ptr<croc
   }
   rub_max_ = (Fa_x_u - ub).cwiseMax(Scalar(0.))   ;
 
+
   // Shoulder height weight
-  sh_ub_max_ << x(2) + pshoulder_0(1,0)*x(3) - pshoulder_0(0,0)*x(4) - shoulder_height_limit ,
-                x(2) + pshoulder_0(1,1)*x(3) - pshoulder_0(0,1)*x(4) - shoulder_height_limit ,
-                x(2) + pshoulder_0(1,2)*x(3) - pshoulder_0(0,2)*x(4) - shoulder_height_limit , 
-                x(2) + pshoulder_0(1,3)*x(3) - pshoulder_0(0,3)*x(4) - shoulder_height_limit ; 
-  sh_ub_max_ = sh_ub_max_.cwiseMax(Scalar(0.)) ;    
+  sh_ub_max_ << psh.block(0,0,3,1).squaredNorm() - sh_hlim*sh_hlim  ,
+                psh.block(0,1,3,1).squaredNorm() - sh_hlim*sh_hlim  ,
+                psh.block(0,2,3,1).squaredNorm() - sh_hlim*sh_hlim  , 
+                psh.block(0,3,3,1).squaredNorm() - sh_hlim*sh_hlim  ; 
+  
+  sh_ub_max_ = sh_ub_max_.cwiseMax(Scalar(0.)) ;   
   
   // Cost computation 
-  d->cost = 0.5 * d->r.transpose() * d->r     + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm() + shoulder_height_weight * Scalar(0.5) * sh_ub_max_.squaredNorm() ;
+  // d->cost = 0.5 * d->r.transpose() * d->r     + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm() + sh_weight * Scalar(0.5) * sh_ub_max_.squaredNorm() ;
+  d->cost = 0.5 * d->r.transpose() * d->r     + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm() + sh_weight * Scalar(0.5) * sh_ub_max_.sum() ;
 }
 
 
@@ -135,29 +150,95 @@ void ActionModelQuadrupedNonLinearTpl<Scalar>::calcDiff(const boost::shared_ptr<
   ActionDataQuadrupedNonLinearTpl<Scalar>* d = static_cast<ActionDataQuadrupedNonLinearTpl<Scalar>*>(data.get());  
 
   // Cost derivatives : Lx
+  
   d->Lx = (state_weights_.array()* d->r.template head<12>().array()).matrix() ;
 
   // Hessian : Lxx
-  d->Lxx.block(2,2,3,3).setZero() ; 
+  d->Lxx.block(0,0,6,6).setZero() ; 
   d->Lxx.diagonal() = (state_weights_.array() * state_weights_.array()).matrix() ;  
 
   // Shoulder height derivative cost
   for (int j=0 ; j<4 ; j=j+1){
     if (sh_ub_max_[j] > Scalar(0.) ){
-      d->Lx.block(2,0,1,1) += shoulder_height_weight*sh_ub_max_.block(j,0,1,1) ; 
-      d->Lx.block(3,0,1,1) += shoulder_height_weight*pshoulder_0(1,j)*sh_ub_max_.block(j,0,1,1) ; 
-      d->Lx.block(4,0,1,1) += - shoulder_height_weight*pshoulder_0(0,j)*sh_ub_max_.block(j,0,1,1) ; 
+      // d->Lx.block(0,0,1,1) += Scalar(2.)*sh_weight*psh(0,j)*sh_ub_max_.block(j,0,1,1) ; 
+      // d->Lx.block(1,0,1,1) += Scalar(2.)*sh_weight*psh(1,j)*sh_ub_max_.block(j,0,1,1) ; 
+      // d->Lx.block(2,0,1,1) += Scalar(2.)*sh_weight*psh(2,j)*sh_ub_max_.block(j,0,1,1) ; 
+      // d->Lx.block(3,0,1,1) += Scalar(2.)*sh_weight*pshoulder_0(1,j)*psh(2,j)*sh_ub_max_.block(j,0,1,1) ; 
+      // d->Lx.block(4,0,1,1) += -Scalar(2.)*sh_weight*pshoulder_0(0,j)*psh(2,j)*sh_ub_max_.block(j,0,1,1) ; 
+      // d->Lx.block(5,0,1,1) += Scalar(2.)*sh_weight*( -pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j))*sh_ub_max_.block(j,0,1,1) ; 
+      d->Lx(0,0) += sh_weight*psh(0,j) ; 
+      d->Lx(1,0) += sh_weight*psh(1,j) ; 
+      d->Lx(2,0) += sh_weight*psh(2,j) ; 
+      d->Lx(3,0) += sh_weight*pshoulder_0(1,j)*psh(2,j) ; 
+      d->Lx(4,0) += -sh_weight*pshoulder_0(0,j)*psh(2,j) ; 
+      d->Lx(5,0) += sh_weight*( -pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j) ) ;
 
-      d->Lxx.block(2,2,1,1) += shoulder_height_weight*Eigen::Matrix<Scalar, 1, 1>::Identity() ; 
-      d->Lxx.block(3,3,1,1) += shoulder_height_weight*pshoulder_0(1,j)*pshoulder_0.block(1,j,1,1) ; 
-      d->Lxx.block(4,4,1,1) += shoulder_height_weight*pshoulder_0(0,j)*pshoulder_0.block(0,j,1,1) ; 
+      d->Lxx(0,0) += sh_weight ; 
+      d->Lxx(1,1) += sh_weight ; 
+      d->Lxx(2,2) += sh_weight ; 
+      d->Lxx(3,3) += sh_weight*pshoulder_0(1,j)*pshoulder_0(1,j) ; 
+      d->Lxx(3,3) += sh_weight*pshoulder_0(0,j)*pshoulder_0(0,j) ;
+      d->Lxx(5,0) += sh_weight*( pshoulder_0(1,j)*pshoulder_0(1,j) + pshoulder_0(0,j)*pshoulder_0(0,j) ) ;
 
-      d->Lxx.block(3,4,1,1) += -shoulder_height_weight*pshoulder_0(1,j)*pshoulder_0.block(0,j,1,1) ; 
-      d->Lxx.block(4,3,1,1) += -shoulder_height_weight*pshoulder_0(1,j)*pshoulder_0.block(0,j,1,1) ; 
-      d->Lxx.block(2,3,1,1) += shoulder_height_weight*pshoulder_0.block(1,j,1,1) ; 
-      d->Lxx.block(3,2,1,1) += shoulder_height_weight*pshoulder_0.block(1,j,1,1) ; 
-      d->Lxx.block(2,4,1,1) += -shoulder_height_weight*pshoulder_0.block(0,j,1,1) ; 
-      d->Lxx.block(4,2,1,1) += -shoulder_height_weight*pshoulder_0.block(0,j,1,1) ; 
+      d->Lxx(0,5) += -sh_weight*pshoulder_0(1,j) ;
+      d->Lxx(5,0) += -sh_weight*pshoulder_0(1,j) ;
+      
+      d->Lxx(1,5) += sh_weight*pshoulder_0(0,j) ;
+      d->Lxx(5,1) += sh_weight*pshoulder_0(0,j) ;
+
+      d->Lxx(2,3) += sh_weight*pshoulder_0(1,j) ;
+      d->Lxx(2,4) += -sh_weight*pshoulder_0(0,j) ;
+      d->Lxx(3,2) += sh_weight*pshoulder_0(1,j) ;
+      d->Lxx(4,2) += -sh_weight*pshoulder_0(0,j) ;
+
+      d->Lxx(3,4) += -sh_weight*pshoulder_0(1,j)*pshoulder_0(0,j) ;
+      d->Lxx(4,3) += -sh_weight*pshoulder_0(1,j)*pshoulder_0(0,j) ;
+      
+
+      // d->Lxx.block(0,0,1,1) += Scalar(2.)*sh_weight*( sh_ub_max_.block(j,0,1,1) + Scalar(2.)*psh.block(0,j,1,1) ) ; 
+      // d->Lxx.block(1,1,1,1) += Scalar(2.)*sh_weight*( sh_ub_max_.block(j,0,1,1) + Scalar(2.)*psh.block(1,j,1,1) ) ; 
+      // d->Lxx.block(2,2,1,1) += Scalar(2.)*sh_weight*( sh_ub_max_.block(j,0,1,1) + Scalar(2.)*psh.block(2,j,1,1) ) ;
+
+      // d->Lxx.block(3,3,1,1) += Scalar(2.)*sh_weight*pshoulder_0(1,j)*( pshoulder_0(1,j)*sh_ub_max_.block(j,0,1,1) + Scalar(2.)*pshoulder_0(1,j)*psh.block(2,j,1,1) ) ;
+      // d->Lxx.block(4,4,1,1) += -Scalar(2.)*sh_weight*pshoulder_0(0,j)*( -pshoulder_0(0,j)*sh_ub_max_.block(j,0,1,1) - Scalar(2.)*pshoulder_0(0,j)*psh.block(2,j,1,1) ) ; 
+      // d->Lxx.block(5,5,1,1) += Scalar(2.)*sh_weight*((pshoulder_0(1,j)*pshoulder_0(1,j) + pshoulder_0(0,j)*pshoulder_0(0,j))*sh_ub_max_.block(j,0,1,1) 
+      //                          -pshoulder_0(1,j)*psh.block(0,j,1,1) + pshoulder_0(0,j)*psh.block(1,j,1,1) )  ;
+
+      // d->Lxx(0,1) += Scalar(4.)*sh_weight*psh(0,j)*psh(1,j) ;          
+      // d->Lxx(0,2) += Scalar(4.)*sh_weight*psh(0,j)*psh(2,j) ;       
+      // d->Lxx(0,3) += Scalar(4.)*sh_weight*psh(0,j)*pshoulder_0(1,j)*psh(2,j) ;      
+      // d->Lxx(0,4) += -Scalar(4.)*sh_weight*psh(0,j)*pshoulder_0(0,j)*psh(2,j) ;   
+      // d->Lxx(0,5) += Scalar(2.)*sh_weight*(-pshoulder_0(1,j)*sh_ub_max_(j,0) + Scalar(2.)*psh(0,j)*(-pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ) ;   
+      // d->Lxx(1,0) += Scalar(4.)*sh_weight*psh(0,j)*psh(1,j) ;          
+      // d->Lxx(2,0) += Scalar(4.)*sh_weight*psh(0,j)*psh(2,j) ;       
+      // d->Lxx(3,0) += Scalar(4.)*sh_weight*psh(0,j)*pshoulder_0(1,j)*psh(2,j) ;      
+      // d->Lxx(4,0) += -Scalar(4.)*sh_weight*psh(0,j)*pshoulder_0(0,j)*psh(2,j) ;   
+      // d->Lxx(5,0) += Scalar(2.)*sh_weight*(-pshoulder_0(1,j)*sh_ub_max_(j,0) + Scalar(2.)*psh(0,j)*(-pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ) ;
+
+      // d->Lxx(1,2) += Scalar(4.)*sh_weight*psh(1,j)*psh(2,j) ;       
+      // d->Lxx(1,3) += Scalar(4.)*sh_weight*psh(1,j)*pshoulder_0(1,j)*psh(2,j) ;      
+      // d->Lxx(1,4) += -Scalar(4.)*sh_weight*psh(1,j)*pshoulder_0(0,j)*psh(2,j) ;   
+      // d->Lxx(1,5) += Scalar(2.)*sh_weight*(pshoulder_0(0,j)*sh_ub_max_(j,0) + Scalar(2.)*psh(0,j)*(-pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ) ;
+      // d->Lxx(2,1) += Scalar(4.)*sh_weight*psh(1,j)*psh(2,j) ;       
+      // d->Lxx(3,1) += Scalar(4.)*sh_weight*psh(1,j)*pshoulder_0(1,j)*psh(2,j) ;      
+      // d->Lxx(4,1) += -Scalar(4.)*sh_weight*psh(1,j)*pshoulder_0(0,j)*psh(2,j) ;   
+      // d->Lxx(5,1) += Scalar(2.)*sh_weight*(pshoulder_0(0,j)*sh_ub_max_(j,0) + Scalar(2.)*psh(0,j)*(-pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ) ;    
+
+      // d->Lxx(2,3) += Scalar(2.)*sh_weight*( pshoulder_0(1,j)*sh_ub_max_(j,0) + Scalar(2.)*psh(2,j)*pshoulder_0(1,j)*psh(2,j) );   
+      // d->Lxx(2,4) += Scalar(2.)*sh_weight*( -pshoulder_0(0,j)*sh_ub_max_(j,0) - Scalar(2.)*psh(2,j)*pshoulder_0(0,j)*psh(2,j) );  
+      // d->Lxx(2,5) += Scalar(4.)*sh_weight*psh(2,j)*( -pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j));
+      // d->Lxx(3,2) += Scalar(2.)*sh_weight*( pshoulder_0(1,j)*sh_ub_max_(j,0) + Scalar(2.)*psh(2,j)*pshoulder_0(1,j)*psh(2,j) );   
+      // d->Lxx(4,2) += Scalar(2.)*sh_weight*( -pshoulder_0(0,j)*sh_ub_max_(j,0) - Scalar(2.)*psh(2,j)*pshoulder_0(0,j)*psh(2,j) );  
+      // d->Lxx(5,2) += Scalar(4.)*sh_weight*psh(2,j)*( -pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j));    
+
+      // d->Lxx(3,4) += Scalar(2.)*sh_weight*pshoulder_0(1,j)*(-pshoulder_0(0,j)*sh_ub_max_(j,0) - psh(2,j)*Scalar(2.)*pshoulder_0(0,j)*psh(2,j)) ; 
+      // d->Lxx(3,5) += Scalar(4.)*sh_weight*pshoulder_0(1,j)*psh(2,j)*(-pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ; 
+      // d->Lxx(4,3) += Scalar(2.)*sh_weight*pshoulder_0(1,j)*(-pshoulder_0(0,j)*sh_ub_max_(j,0) - psh(2,j)*Scalar(2.)*pshoulder_0(0,j)*psh(2,j)) ; 
+      // d->Lxx(5,3) += Scalar(4.)*sh_weight*pshoulder_0(1,j)*psh(2,j)*(-pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ; 
+
+      // d->Lxx(4,5) += Scalar(4.)*sh_weight*pshoulder_0(0,j)*psh(2,j)*( -pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j))   ;
+      // d->Lxx(5,4) += Scalar(4.)*sh_weight*pshoulder_0(0,j)*psh(2,j)*( -pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ;  
+
     }
   }  
   
@@ -314,22 +395,22 @@ void ActionModelQuadrupedNonLinearTpl<Scalar>::set_min_fz_contact(const Scalar& 
 
 template <typename Scalar>
 const Scalar& ActionModelQuadrupedNonLinearTpl<Scalar>::get_shoulder_hlim() const {
-  return shoulder_height_limit;
+  return sh_hlim;
 }
 template <typename Scalar>
 void ActionModelQuadrupedNonLinearTpl<Scalar>::set_shoulder_hlim(const Scalar& hlim) {
   // The model need to be updated after this changed
-  shoulder_height_limit = hlim; 
+  sh_hlim = hlim; 
 }
 
 template <typename Scalar>
 const Scalar& ActionModelQuadrupedNonLinearTpl<Scalar>::get_shoulder_weight() const {
-  return shoulder_height_weight;
+  return sh_weight;
 }
 template <typename Scalar>
 void ActionModelQuadrupedNonLinearTpl<Scalar>::set_shoulder_weight(const Scalar& weight) {
   // The model need to be updated after this changed
-  shoulder_height_weight = weight; 
+  sh_weight = weight; 
 }
 
 

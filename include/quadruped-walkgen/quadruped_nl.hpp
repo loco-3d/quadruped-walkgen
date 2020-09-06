@@ -120,9 +120,10 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
 
   // Cost relative to the shoulder height
   typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_0;  
+  typename Eigen::Matrix<Scalar, 3 , 4 > psh; 
   typename Eigen::Matrix<Scalar, 4, 1 > sh_ub_max_ ; 
-  Scalar shoulder_height_weight ; 
-  Scalar shoulder_height_limit ; 
+  Scalar sh_weight ; 
+  Scalar sh_hlim ; 
 
 
 };
