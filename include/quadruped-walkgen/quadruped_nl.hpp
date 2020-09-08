@@ -54,6 +54,9 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
   const Scalar& get_min_fz_contact() const;
   void set_min_fz_contact(const Scalar& min_fz);
 
+  const Scalar& get_max_fz_contact() const;
+  void set_max_fz_contact(const Scalar& max_fz_);
+
   // Set parameter relative to the shoulder height cost
   const Scalar& get_shoulder_hlim() const;
   void set_shoulder_hlim(const Scalar& hlim);
@@ -88,6 +91,7 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
   Scalar mu ;
   Scalar friction_weight_;
   Scalar min_fz_in_contact ; 
+  Scalar max_fz ; 
 
   typename Eigen::Matrix<Scalar, 12, 1> force_weights_;
   typename Eigen::Matrix<Scalar, 12, 1> state_weights_;
@@ -104,13 +108,12 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
   typename MathBase::Vector3s lever_tmp;
   typename MathBase::MatrixXs xref_;  
 
-  typename Eigen::Matrix<Scalar, 20, 1 > ub ; 
+  typename Eigen::Matrix<Scalar, 24, 1 > ub ; 
 
-  typename Eigen::Matrix<Scalar, 20, 1 > Fa_x_u ;   
-  typename Eigen::Matrix<Scalar, 20, 1 > rub_ ; 
-  typename Eigen::Matrix<Scalar, 20, 1 > rub_max_ ; 
-  typename Eigen::Matrix<Scalar, 20, 20 > Arr ; 
-  typename Eigen::Matrix<Scalar, 5, 1 > r ; 
+  typename Eigen::Matrix<Scalar, 24, 1 > Fa_x_u ; 
+  typename Eigen::Matrix<Scalar, 24, 1 > rub_max_ ; 
+  typename Eigen::Matrix<Scalar, 24, 24 > Arr ; 
+  typename Eigen::Matrix<Scalar, 6, 1 > r ; 
   typename Eigen::Matrix<Scalar, 4, 1 > gait ; 
 
   typename Eigen::Matrix<Scalar, 3, 1 > base_vector_x ; 

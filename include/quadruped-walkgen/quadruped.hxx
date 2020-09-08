@@ -14,6 +14,7 @@ ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
   dt_ = Scalar(0.02) ; 
   mass = Scalar(2.50000279) ; 
   min_fz_in_contact = Scalar(0.0) ; 
+  max_fz = Scalar(25.) ; 
 
   // Matrix model initialization
   g.setZero() ;
@@ -36,10 +37,12 @@ ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
   
   // UpperBound vector 
   ub.setZero() ; 
+  for (int i=0; i<4; i=i+1){
+    ub(6*i+5) = max_fz ; 
+  }
 
   // Temporary vector used 
   Fa_x_u.setZero() ; 
-  rub_.setZero() ; 
   rub_max_.setZero() ;
   Arr.setZero() ; 
   r.setZero() ;
@@ -100,9 +103,9 @@ void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::Ac
 
   // Friction cone 
   for (int i=0; i<4; i=i+1){
-     Fa_x_u.segment(5*i,5) << u(3*i) - mu*u(3*i+2) , -u(3*i) - mu*u(3*i+2),
+     Fa_x_u.segment(6*i,6) << u(3*i) - mu*u(3*i+2) , -u(3*i) - mu*u(3*i+2),
                               u(3*i+1) - mu*u(3*i+2) , -u(3*i+1) - mu*u(3*i+2),
-                              -u(3*i+2) ;                             
+                              -u(3*i+2) , u(3*i+2);                             
   }
   rub_max_ = (Fa_x_u - ub).cwiseMax(0.)   ;
 
@@ -132,12 +135,7 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
     throw_pretty("Invalid argument: "
                  << "u has wrong dimension (it should be " + std::to_string(nu_) + ")");
   }
-  for (int i=0; i<4; i=i+1){
-     Fa_x_u.segment(5*i,5) << u(3*i) - mu*u(3*i+2) , -u(3*i) - mu*u(3*i+2),
-                              u(3*i+1) - mu*u(3*i+2) , -u(3*i+1) - mu*u(3*i+2),
-                              -u(3*i+2) ;                             
-  }
-  rub_max_ = (Fa_x_u - ub).cwiseMax(0.)   ;
+  
   
   ActionDataQuadrupedTpl<Scalar>* d = static_cast<ActionDataQuadrupedTpl<Scalar>*>(data.get());  
   
@@ -149,12 +147,6 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
   d->Lxx.diagonal() = (state_weights_.array() * state_weights_.array()).matrix() ;  
   for (int j=0 ; j<4 ; j=j+1){
     if (sh_ub_max_[j] > Scalar(0.) ){
-      // d->Lx.block(0,0,1,1) += Scalar(2.)*sh_weight*psh(0,j)*sh_ub_max_.block(j,0,1,1) ; 
-      // d->Lx.block(1,0,1,1) += Scalar(2.)*sh_weight*psh(1,j)*sh_ub_max_.block(j,0,1,1) ; 
-      // d->Lx.block(2,0,1,1) += Scalar(2.)*sh_weight*psh(2,j)*sh_ub_max_.block(j,0,1,1) ; 
-      // d->Lx.block(3,0,1,1) += Scalar(2.)*sh_weight*pshoulder_0(1,j)*psh(2,j)*sh_ub_max_.block(j,0,1,1) ; 
-      // d->Lx.block(4,0,1,1) += -Scalar(2.)*sh_weight*pshoulder_0(0,j)*psh(2,j)*sh_ub_max_.block(j,0,1,1) ; 
-      // d->Lx.block(5,0,1,1) += Scalar(2.)*sh_weight*( -pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j))*sh_ub_max_.block(j,0,1,1) ; 
 
       d->Lx(0,0) += sh_weight*psh(0,j) ; 
       d->Lx(1,0) += sh_weight*psh(1,j) ; 
@@ -184,79 +176,25 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
       d->Lxx(3,4) += -sh_weight*pshoulder_0(1,j)*pshoulder_0(0,j) ;
       d->Lxx(4,3) += -sh_weight*pshoulder_0(1,j)*pshoulder_0(0,j) ;
       
-      // d->Lxx.block(0,0,1,1) += Scalar(2.)*sh_weight*( sh_ub_max_.block(j,0,1,1) + Scalar(2.)*psh.block(0,j,1,1) ) ; 
-      // d->Lxx.block(1,1,1,1) += Scalar(2.)*sh_weight*( sh_ub_max_.block(j,0,1,1) + Scalar(2.)*psh.block(1,j,1,1) ) ; 
-      // d->Lxx.block(2,2,1,1) += Scalar(2.)*sh_weight*( sh_ub_max_.block(j,0,1,1) + Scalar(2.)*psh.block(2,j,1,1) ) ;
-
-      // d->Lxx.block(3,3,1,1) += Scalar(2.)*sh_weight*pshoulder_0(1,j)*( pshoulder_0(1,j)*sh_ub_max_.block(j,0,1,1) + Scalar(2.)*pshoulder_0(1,j)*psh.block(2,j,1,1) ) ;
-      // d->Lxx.block(4,4,1,1) += -Scalar(2.)*sh_weight*pshoulder_0(0,j)*( -pshoulder_0(0,j)*sh_ub_max_.block(j,0,1,1) - Scalar(2.)*pshoulder_0(0,j)*psh.block(2,j,1,1) ) ; 
-      // d->Lxx.block(5,5,1,1) += Scalar(2.)*sh_weight*((pshoulder_0(1,j)*pshoulder_0(1,j) + pshoulder_0(0,j)*pshoulder_0(0,j))*sh_ub_max_.block(j,0,1,1) 
-      //                          -pshoulder_0(1,j)*psh.block(0,j,1,1) + pshoulder_0(0,j)*psh.block(1,j,1,1) )  ;
-
-      // d->Lxx(0,1) += Scalar(4.)*sh_weight*psh(0,j)*psh(1,j) ;          
-      // d->Lxx(0,2) += Scalar(4.)*sh_weight*psh(0,j)*psh(2,j) ;       
-      // d->Lxx(0,3) += Scalar(4.)*sh_weight*psh(0,j)*pshoulder_0(1,j)*psh(2,j) ;      
-      // d->Lxx(0,4) += -Scalar(4.)*sh_weight*psh(0,j)*pshoulder_0(0,j)*psh(2,j) ;   
-      // d->Lxx(0,5) += Scalar(2.)*sh_weight*(-pshoulder_0(1,j)*sh_ub_max_(j,0) + Scalar(2.)*psh(0,j)*(-pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ) ;   
-      // d->Lxx(1,0) += Scalar(4.)*sh_weight*psh(0,j)*psh(1,j) ;          
-      // d->Lxx(2,0) += Scalar(4.)*sh_weight*psh(0,j)*psh(2,j) ;       
-      // d->Lxx(3,0) += Scalar(4.)*sh_weight*psh(0,j)*pshoulder_0(1,j)*psh(2,j) ;      
-      // d->Lxx(4,0) += -Scalar(4.)*sh_weight*psh(0,j)*pshoulder_0(0,j)*psh(2,j) ;   
-      // d->Lxx(5,0) += Scalar(2.)*sh_weight*(-pshoulder_0(1,j)*sh_ub_max_(j,0) + Scalar(2.)*psh(0,j)*(-pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ) ;
-
-      // d->Lxx(1,2) += Scalar(4.)*sh_weight*psh(1,j)*psh(2,j) ;       
-      // d->Lxx(1,3) += Scalar(4.)*sh_weight*psh(1,j)*pshoulder_0(1,j)*psh(2,j) ;      
-      // d->Lxx(1,4) += -Scalar(4.)*sh_weight*psh(1,j)*pshoulder_0(0,j)*psh(2,j) ;   
-      // d->Lxx(1,5) += Scalar(2.)*sh_weight*(pshoulder_0(0,j)*sh_ub_max_(j,0) + Scalar(2.)*psh(0,j)*(-pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ) ;
-      // d->Lxx(2,1) += Scalar(4.)*sh_weight*psh(1,j)*psh(2,j) ;       
-      // d->Lxx(3,1) += Scalar(4.)*sh_weight*psh(1,j)*pshoulder_0(1,j)*psh(2,j) ;      
-      // d->Lxx(4,1) += -Scalar(4.)*sh_weight*psh(1,j)*pshoulder_0(0,j)*psh(2,j) ;   
-      // d->Lxx(5,1) += Scalar(2.)*sh_weight*(pshoulder_0(0,j)*sh_ub_max_(j,0) + Scalar(2.)*psh(0,j)*(-pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ) ;    
-
-      // d->Lxx(2,3) += Scalar(2.)*sh_weight*( pshoulder_0(1,j)*sh_ub_max_(j,0) + Scalar(2.)*psh(2,j)*pshoulder_0(1,j)*psh(2,j) );   
-      // d->Lxx(2,4) += Scalar(2.)*sh_weight*( -pshoulder_0(0,j)*sh_ub_max_(j,0) - Scalar(2.)*psh(2,j)*pshoulder_0(0,j)*psh(2,j) );  
-      // d->Lxx(2,5) += Scalar(4.)*sh_weight*psh(2,j)*( -pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j));
-      // d->Lxx(3,2) += Scalar(2.)*sh_weight*( pshoulder_0(1,j)*sh_ub_max_(j,0) + Scalar(2.)*psh(2,j)*pshoulder_0(1,j)*psh(2,j) );   
-      // d->Lxx(4,2) += Scalar(2.)*sh_weight*( -pshoulder_0(0,j)*sh_ub_max_(j,0) - Scalar(2.)*psh(2,j)*pshoulder_0(0,j)*psh(2,j) );  
-      // d->Lxx(5,2) += Scalar(4.)*sh_weight*psh(2,j)*( -pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j));    
-
-      // d->Lxx(3,4) += Scalar(2.)*sh_weight*pshoulder_0(1,j)*(-pshoulder_0(0,j)*sh_ub_max_(j,0) - psh(2,j)*Scalar(2.)*pshoulder_0(0,j)*psh(2,j)) ; 
-      // d->Lxx(3,5) += Scalar(4.)*sh_weight*pshoulder_0(1,j)*psh(2,j)*(-pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ; 
-      // d->Lxx(4,3) += Scalar(2.)*sh_weight*pshoulder_0(1,j)*(-pshoulder_0(0,j)*sh_ub_max_(j,0) - psh(2,j)*Scalar(2.)*pshoulder_0(0,j)*psh(2,j)) ; 
-      // d->Lxx(5,3) += Scalar(4.)*sh_weight*pshoulder_0(1,j)*psh(2,j)*(-pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ; 
-
-      // d->Lxx(4,5) += Scalar(4.)*sh_weight*pshoulder_0(0,j)*psh(2,j)*( -pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j))   ;
-      // d->Lxx(5,4) += Scalar(4.)*sh_weight*pshoulder_0(0,j)*psh(2,j)*( -pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j)) ;  
     }
   } 
 
   // Cost derivative : Lu
   for (int i=0; i<4; i=i+1){
-    // r << friction_weight_*rub_max_.segment(5*i,5) ; 
-    r[1] = friction_weight_*rub_max_[5*i] ;
-    r[2] = friction_weight_*rub_max_[5*i + 1] ;
-    r[3] = friction_weight_*rub_max_[5*i + 2] ;
-    r[4] = friction_weight_*rub_max_[5*i + 3] ;
-    r[5] = friction_weight_*rub_max_[5*i + 4] ;
-    d->Lu.block(i*3,0,3,1) << r[1] - r[2] , r[3] - r[4] , -mu*(r[1] + r[2] + r[3] + r[4] ) - r[5] ;
+    r = friction_weight_*rub_max_.segment(6*i,6) ; 
+    d->Lu.block(i*3,0,3,1) << r(0) - r(1) , r(2) - r(3) , -mu*(r(0) + r(1) + r(2) + r(3) ) - r(4) + r(5) ;
   }  
   d->Lu = d->Lu + (force_weights_.array()*d->r.template tail<12>().array()).matrix() ; 
-  
   
   
   // Hessian : Luu
   // Matrix friction cone hessian (20x12)
   Arr.diagonal() =  ((Fa_x_u - ub).array() >= 0.).matrix().template cast<Scalar>() ; 
   for (int i=0; i<4; i=i+1){
-    // r = friction_weight_*Arr.diagonal().segment(5*i,5) ; 
-    r[1] = friction_weight_*Arr.diagonal()[5*i] ;
-    r[2] = friction_weight_*Arr.diagonal()[5*i+1] ;
-    r[3] = friction_weight_*Arr.diagonal()[5*i+2] ;
-    r[4] = friction_weight_*Arr.diagonal()[5*i+3] ;
-    r[5] = friction_weight_*Arr.diagonal()[5*i+4] ;
-    d->Luu.block(3*i,3*i,3,3) << r[1] + r[2] , 0.0 , mu*(r[2] - r[1] ),
-                                  0.0,  r[3] + r[4] , mu*(r[4] - r[3] ), 
-                                mu*(r[2] - r[1] ) , mu*(r[4] - r[3]) , mu*mu*(r[1] + r[2] + r[3] + r[4]) + r[5]  ; 
+    r = friction_weight_*Arr.diagonal().segment(6*i,6) ; 
+    d->Luu.block(3*i,3*i,3,3) << r(0) + r(1) , 0.0 , mu*(r(1) - r(0) ),
+                                  0.0,  r(2) + r(3) , mu*(r(3) - r(2) ), 
+                                mu*(r(1) - r(0) ) , mu*(r(3) - r(2)) , mu*mu*(r(0) + r(1) + r(2) + r(3)) + r(4) +r(5) ; 
   }
   d->Luu.diagonal() = d->Luu.diagonal() + (force_weights_.array() * force_weights_.array()).matrix() ;
 
@@ -370,6 +308,20 @@ void ActionModelQuadrupedTpl<Scalar>::set_min_fz_contact(const Scalar& min_fz) {
   min_fz_in_contact = min_fz; 
 }
 
+template <typename Scalar>
+const Scalar& ActionModelQuadrupedTpl<Scalar>::get_max_fz_contact() const {
+  // The model need to be updated after this changed
+  return max_fz;
+}
+template <typename Scalar>
+void ActionModelQuadrupedTpl<Scalar>::set_max_fz_contact(const Scalar& max_fz_) {
+  // The model need to be updated after this changed
+  max_fz = max_fz_; 
+  for (int i=0; i<4; i=i+1){
+    ub(6*i+5) = max_fz ; 
+  }
+}
+
 
 ///////////////////////////
 //// get A & B matrix /////
@@ -438,7 +390,7 @@ void ActionModelQuadrupedTpl<Scalar>::update_model(const Eigen::Ref<const typena
   for (int i=0; i<4; i=i+1){
     if (S(i,0) != 0) {
       // set limit for normal force, (foot in contact with the ground)
-      ub[5*i+4] = - min_fz_in_contact ; 
+      ub(6*i+4) = - min_fz_in_contact ; 
 
       // B update
       B.block(6 , 3*i  , 3,3).diagonal() << dt_ / mass  ,  dt_ / mass  ,  dt_ / mass  ; 
@@ -449,7 +401,7 @@ void ActionModelQuadrupedTpl<Scalar>::update_model(const Eigen::Ref<const typena
     }
     else{
       // set limit for normal force at 0.0 
-      ub[5*i+4] = Scalar(0.0) ; 
+      ub(6*i+4) = Scalar(0.0) ; 
       B.block(6 , 3*i  , 3,3).setZero();
       B.block(9 , 3*i  , 3,3).setZero() ; 
     };
