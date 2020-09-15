@@ -160,7 +160,7 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
       d->Lxx(2,2) += sh_weight ; 
       d->Lxx(3,3) += sh_weight*pshoulder_0(1,j)*pshoulder_0(1,j) ; 
       d->Lxx(3,3) += sh_weight*pshoulder_0(0,j)*pshoulder_0(0,j) ;
-      d->Lxx(5,0) += sh_weight*( pshoulder_0(1,j)*pshoulder_0(1,j) + pshoulder_0(0,j)*pshoulder_0(0,j) ) ;
+      d->Lxx(5,5) += sh_weight*( pshoulder_0(1,j)*pshoulder_0(1,j) + pshoulder_0(0,j)*pshoulder_0(0,j) ) ;
 
       d->Lxx(0,5) += -sh_weight*pshoulder_0(1,j) ;
       d->Lxx(5,0) += -sh_weight*pshoulder_0(1,j) ;
