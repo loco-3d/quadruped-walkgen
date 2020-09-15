@@ -55,9 +55,9 @@ void exposeActionQuadrupedAugmented() {
       .add_property("stateWeights",
                     bp::make_function(&ActionModelQuadrupedAugmented::get_state_weights, bp::return_internal_reference<>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_state_weights), "Weights on the state vector")
-      .add_property("shoulderWeights",
+      .add_property("heuristicWeights",
                     bp::make_function(&ActionModelQuadrupedAugmented::get_shoulder_weights, bp::return_internal_reference<>()),
-                    bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_weights), "Weights on the shoulder term")
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_weights), "Weights on the heuristic term")
       .add_property("shoulderPosition",
                     bp::make_function(&ActionModelQuadrupedAugmented::get_shoulder_position, bp::return_internal_reference<>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_position), "shoulderPosition position in local frame")
@@ -82,6 +82,10 @@ void exposeActionQuadrupedAugmented() {
       .add_property("B",
                     bp::make_function(&ActionModelQuadrupedAugmented::get_B, bp::return_internal_reference<>()),
                      "get B matrix")
+      .add_property("shoulder_hlim", bp::make_function(&ActionModelQuadrupedAugmented::get_shoulder_hlim, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_hlim) , "Shoulder height limit ")
+      .add_property("shoulderWeights", bp::make_function(&ActionModelQuadrupedAugmented::get_shoulder_weight, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_weight) , "shoulder Weight term (scalar) ")
       .add_property("symmetry_term", bp::make_function(&ActionModelQuadrupedAugmented::get_symmetry_term, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_symmetry_term) , "symmetry term for the foot position heuristic")
       .add_property("centrifugal_term", bp::make_function(&ActionModelQuadrupedAugmented::get_centrifugal_term, bp::return_value_policy<bp::return_by_value>()),
