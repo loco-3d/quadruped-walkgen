@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
   // Control cycle during one gait period  
   unsigned int N = 16;  // number of nodes
   unsigned int T = 1000;  // number of trials
-  unsigned int MAXITER = 5;
+  unsigned int MAXITER = 1;
   if (argc > 1) {
     T = atoi(argv[1]);
     MAXITER = atoi(argv[2]); ; 

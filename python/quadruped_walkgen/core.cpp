@@ -17,6 +17,10 @@ void exposeCore() {
   exposeActionQuadrupedNonLinear();
   exposeActionQuadrupedAugmented() ; 
   exposeActionQuadrupedStep() ; 
+  exposeActionQuadrupedAugmentedTime() ; 
+  exposeActionQuadrupedStepTime() ;
+  exposeActionQuadrupedTime() ;
+  exposeActionQuadrupedStepPeriod() ; 
 }
 
 }  // namespace python

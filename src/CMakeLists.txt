@@ -3,6 +3,9 @@ SET(${PROJECT_NAME}_SOURCES
   quadruped_nl.cpp
   quadruped_augmented.cpp
   quadruped_step.cpp
+  quadruped_time.cpp
+  quadruped_augmented_time.cpp
+  quadruped_step_time.cpp
   )
 
 ADD_LIBRARY(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})

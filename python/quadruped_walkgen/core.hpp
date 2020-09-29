@@ -21,6 +21,10 @@ void exposeActionQuadruped();
 void exposeActionQuadrupedNonLinear() ; 
 void exposeActionQuadrupedAugmented() ; 
 void exposeActionQuadrupedStep() ; 
+void exposeActionQuadrupedAugmentedTime() ; 
+void exposeActionQuadrupedStepTime() ; 
+void exposeActionQuadrupedTime() ; 
+void exposeActionQuadrupedStepPeriod() ; 
 
 void exposeCore();
 

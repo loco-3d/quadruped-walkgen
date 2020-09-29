@@ -1,6 +1,7 @@
 SET(${PROJECT_NAME}_BENCHMARK
   quadruped
   quadruped-non-linear
+  quadruped-planner
   )
 
 FOREACH(BENCHMARK_NAME ${${PROJECT_NAME}_BENCHMARK})
