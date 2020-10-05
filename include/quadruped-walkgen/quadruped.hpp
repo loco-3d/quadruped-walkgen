@@ -64,6 +64,9 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   const Scalar& get_shoulder_weight() const;
   void set_shoulder_weight(const Scalar& weight);
 
+  const bool& get_relative_forces() const ;
+  void set_relative_forces(const bool& rel_forces) ;
+
 
   // Update the model depending if the foot in contact with the ground 
   // or the new lever arms
@@ -92,6 +95,9 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   Scalar friction_weight_;
   Scalar min_fz_in_contact ; 
   Scalar max_fz ; 
+  bool relative_forces ;
+
+  typename Eigen::Matrix<Scalar, 12, 1 > uref_ ;
 
   typename Eigen::Matrix<Scalar, 12, 1> force_weights_;
   typename Eigen::Matrix<Scalar, 12, 1> state_weights_;

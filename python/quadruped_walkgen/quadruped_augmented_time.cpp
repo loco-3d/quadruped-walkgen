@@ -89,6 +89,8 @@ void exposeActionQuadrupedAugmentedTime() {
       .add_property("Cost",
                     bp::make_function(&ActionModelQuadrupedAugmentedTime::get_cost, bp::return_internal_reference<>()),
                      "get log cost")
+      .add_property("relative_forces", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_relative_forces, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmentedTime::set_relative_forces) , "relative norm ")
       .add_property("symmetry_term", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_symmetry_term, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmentedTime::set_symmetry_term) , "symmetry term for the foot position heuristic")
       .add_property("centrifugal_term", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_centrifugal_term, bp::return_value_policy<bp::return_by_value>()),

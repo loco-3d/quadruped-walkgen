@@ -90,6 +90,9 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   const typename Eigen::Matrix<Scalar, 12, 12 >& get_A() const;
   const typename Eigen::Matrix<Scalar, 12, 12 >& get_B() const;  
 
+  const bool& get_relative_forces() const ;
+  void set_relative_forces(const bool& rel_forces) ;
+
  protected:
   using Base::has_control_limits_;  //!< Indicates whether any of the control limits
   using Base::nr_;                  //!< Dimension of the cost residual
@@ -109,6 +112,9 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   Scalar T_gait ; 
   bool centrifugal_term ; 
   bool symmetry_term ; 
+  bool relative_forces ;
+
+  typename Eigen::Matrix<Scalar, 12, 1 > uref_ ;
 
   typename Eigen::Matrix<Scalar, 12, 1> force_weights_;
   typename Eigen::Matrix<Scalar, 12, 1> state_weights_;

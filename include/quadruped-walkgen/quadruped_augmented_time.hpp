@@ -87,6 +87,10 @@ class ActionModelQuadrupedAugmentedTimeTpl : public crocoddyl::ActionModelAbstra
   const Scalar& get_dt_bound_weight() const;
   void set_dt_bound_weight(const Scalar& weight_);
 
+  const bool& get_relative_forces() const ;
+  void set_relative_forces(const bool& rel_forces) ;
+
+
 
   // Update the model depending if the foot in contact with the ground 
   // or the new lever arms
@@ -122,6 +126,9 @@ class ActionModelQuadrupedAugmentedTimeTpl : public crocoddyl::ActionModelAbstra
   Scalar dt_bound_weight ; 
   bool centrifugal_term ; 
   bool symmetry_term ; 
+
+  bool relative_forces ;
+  typename Eigen::Matrix<Scalar, 12, 1 > uref_ ;
 
   typename Eigen::Matrix<Scalar, 12, 1> force_weights_;
   typename Eigen::Matrix<Scalar, 12, 1> state_weights_;
