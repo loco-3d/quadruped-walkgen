@@ -114,8 +114,7 @@ void ActionModelQuadrupedStepTimeTpl<Scalar>::calcDiff(const boost::shared_ptr<c
   d->Lx.template tail<1>() << - beta_lim*speed_weight*x(20)*rub_max_bool[0] - beta_lim*speed_weight*x(20)*rub_max_bool[1] ;
  
   d->Lu << speed_weight*u[0]*rub_max_bool[0] , speed_weight*u[1]*rub_max_bool[0] , 
-           speed_weight*u[2]*rub_max_bool[1],  speed_weight*u[3]*rub_max_bool[1] ,
-           Scalar(0.);
+           speed_weight*u[2]*rub_max_bool[1],  speed_weight*u[3]*rub_max_bool[1] ;
   d->Lu +=(step_weights_.array()*d->r.template tail<4>().array()).matrix() ; 
   
   // Hessian : Lxx
@@ -128,8 +127,7 @@ void ActionModelQuadrupedStepTimeTpl<Scalar>::calcDiff(const boost::shared_ptr<c
   d->Luu.diagonal() << speed_weight*rub_max_bool[0] ,
                        speed_weight*rub_max_bool[0] ,
                        speed_weight*rub_max_bool[1] , 
-                       speed_weight*rub_max_bool[1] ,
-                       Scalar(0.)  ; 
+                       speed_weight*rub_max_bool[1]  ; 
   
   d->Luu.diagonal() += (step_weights_.array() * step_weights_.array()).matrix() ;
 

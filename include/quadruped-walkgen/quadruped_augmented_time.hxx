@@ -131,6 +131,7 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calc(const boost::shared_ptr<
   // Residual cost on the state and force norm
   d->r.template head<12>() =  state_weights_.cwiseProduct(x.head(12) - xref_);
   d->r.template segment<8>(12) =  ((heuristicWeights.cwiseProduct(x.segment(12,8) - pshoulder_)).array() * gait_double.array() ).matrix();
+  // d->r.template segment<1>(20) = 0 (dt)
   d->r.template tail<12>() =  force_weights_.cwiseProduct(u- uref_);
 
   // Friction cone 
@@ -146,9 +147,10 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calc(const boost::shared_ptr<
   rub_max_dt = rub_max_dt.cwiseMax(Scalar(0.)) ; 
   
   // Cost computation 
-  d->cost = Scalar(0.5) * d->r.transpose() * d->r     + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm()
+  d->cost =  Scalar(0.5) * d->r.segment(12,8).transpose() * d->r.segment(12,8)   + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm()
           + Scalar(0.5)*( (last_position_weights_.cwiseProduct(x.segment(12,8) - pref_) ).array() * gait_double.array() ).matrix().squaredNorm() 
-          + dt_bound_weight * Scalar(0.5) * rub_max_dt.squaredNorm() ;
+          + dt_bound_weight * Scalar(0.5) * rub_max_dt.squaredNorm() +  x(20) * Scalar(0.5) * d->r.head(12).transpose() * d->r.head(12) + 
+          x(20)*Scalar(0.5) * d->r.tail(12).transpose() * d->r.tail(12);
   
   if (log_cost){
     cost_[0] = Scalar(0.5)*d->r.head(12).transpose()*d->r.head(12) ; // state
@@ -178,25 +180,31 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calcDiff(const boost::shared_
   ActionDataQuadrupedAugmentedTimeTpl<Scalar>* d = static_cast<ActionDataQuadrupedAugmentedTimeTpl<Scalar>*>(data.get());  
   
   // Cost derivatives : Lx
-  d->Lx.template head<12>() = (state_weights_.array()* d->r.template head<12>().array()).matrix() ;
+  d->Lx.template head<12>() = x(20)*(state_weights_.array()* d->r.template head<12>().array()).matrix() ;
   d->Lx.template segment<8>(12)  = (heuristicWeights.array() * d->r.template segment<8>(12).array()).matrix() 
                                 + ((last_position_weights_.cwiseProduct(x.segment(12,8) - pref_) ).array() * gait_double.array() * last_position_weights_.array()).matrix() ; 
   d->Lx.template tail<1>() <<  dt_bound_weight *(- rub_max_dt[0] + rub_max_dt[1]) ; 
-
+  
+  // New cost : c = 0.5||x-x_ref||^2*dt
+  d->Lx.template tail<1>() += Scalar(0.5) * d->r.head(12).transpose() * d->r.head(12) + Scalar(0.5) * d->r.tail(12).transpose() * d->r.tail(12) ; 
+   
   // Cost derivative : Lu
   for (int i=0; i<4; i=i+1){
     r = friction_weight_*rub_max_.segment(6*i,6) ; 
     d->Lu.block(i*3,0,3,1) << r(0) - r(1) , r(2) - r(3) , -mu*(r(0) + r(1) + r(2) + r(3) ) - r(4) + r(5) ;
   }  
-  d->Lu = d->Lu + (force_weights_.array()*d->r.template tail<12>().array()).matrix() ; 
+  d->Lu = d->Lu + x(20)*(force_weights_.array()*d->r.template tail<12>().array()).matrix() ; 
   
   // Hessian : Lxx
-  d->Lxx.diagonal().head(12) = (state_weights_.array() * state_weights_.array()).matrix() ;
+  d->Lxx.diagonal().head(12) = x(20)*(state_weights_.array() * state_weights_.array()).matrix() ;
   d->Lxx.diagonal().segment(12,8) =  ( gait_double.array() * heuristicWeights.array() * heuristicWeights.array() ).matrix() ; 
   d->Lxx.diagonal().segment(12,8) +=  ( gait_double.array() * last_position_weights_.array() * last_position_weights_.array() ).matrix() ; 
   
   d->Lxx.diagonal().tail(1) <<  dt_bound_weight * rub_max_dt_bool[0] + dt_bound_weight *rub_max_dt_bool[1]  ; 
-   
+
+  // New cost : partial derivatives of 20 and state (0--11)
+  d->Lxx.col(20).head(12) = (state_weights_.array()* d->r.template head<12>().array()).matrix() ; 
+  d->Lxx.row(20).head(12) = d->Lxx.col(20).head(12) ; 
     
   // Hessian : Luu
   // Matrix friction cone hessian (20x12)
@@ -207,7 +215,9 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calcDiff(const boost::shared_
                                   0.0,  r(2) + r(3) , mu*(r(3) - r(2) ), 
                                 mu*(r(1) - r(0) ) , mu*(r(3) - r(2)) , mu*mu*(r(0) + r(1) + r(2) + r(3)) + r(4) +r(5) ;
   }
-  d->Luu.diagonal() = d->Luu.diagonal() + (force_weights_.array() * force_weights_.array()).matrix() ;
+  d->Luu.diagonal() = d->Luu.diagonal() + x(20)*(force_weights_.array() * force_weights_.array()).matrix() ;
+
+  d->Lxu.row(20) = (force_weights_.array()*d->r.template tail<12>().array()).matrix() ; 
 
   // Dynamic derivatives
   d->Fx.setZero() ; 
