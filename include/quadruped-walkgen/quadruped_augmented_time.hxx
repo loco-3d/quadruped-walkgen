@@ -153,9 +153,9 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calc(const boost::shared_ptr<
           x(20)*Scalar(0.5) * d->r.tail(12).transpose() * d->r.tail(12);
   
   if (log_cost){
-    cost_[0] = Scalar(0.5)*d->r.head(12).transpose()*d->r.head(12) ; // state
+    cost_[0] = x(20) * Scalar(0.5)*d->r.head(12).transpose()*d->r.head(12) ; // state
     cost_[1] = Scalar(0.5)*d->r.segment(12,8).transpose()*d->r.segment(12,8) ; // heuristic
-    cost_[2] = Scalar(0.5)*d->r.tail(12).transpose()*d->r.tail(12) ;  // Force norm
+    cost_[2] = x(20) * Scalar(0.5)*d->r.tail(12).transpose()*d->r.tail(12) ;  // Force norm
     cost_[3] = dt_bound_weight * Scalar(0.5) * rub_max_dt.squaredNorm() ; //upper/lower bound limit
     cost_[4] = Scalar(0.5)*( (last_position_weights_.cwiseProduct(x.segment(12,8) - pref_) ).array() * gait_double.array() ).matrix().squaredNorm() ; // last position weight
     cost_[5] = friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm() ; //friction weight    

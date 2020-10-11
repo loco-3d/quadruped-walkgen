@@ -69,7 +69,7 @@ void ActionModelQuadrupedTimeTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl
 
   d->xnext.template head<12>() = x.head(12) ; 
   d->xnext.template segment<8>(12) = x.segment(12,8) ; 
-  d->xnext.template tail<1>() = u ; 
+  d->xnext.template tail<1>() = u.cwiseAbs() ; 
  
   // Residual cost on the state and force norm
   // State : delta*||X-Xref||
@@ -77,10 +77,10 @@ void ActionModelQuadrupedTimeTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl
   // Feet placement : delta*||P-Pref||
   d->r.template segment<8>(12) = heuristic_weights_.cwiseProduct(x.segment(12,8) - pshoulder_); 
   // Dt command, used to fix the optimisation to dt_ref_
-  d->r.template tail<1>() <<  dt_weight_command*(u - dt_ref_) ;
+  d->r.template tail<1>() <<  dt_weight_command*(u.cwiseAbs() - dt_ref_) ;
 
   // Penalisation if dt out of lower/upper bound 
-  rub_max_ << dt_min_ - u , u - dt_max_; 
+  rub_max_ << dt_min_ - u.cwiseAbs() , u.cwiseAbs() - dt_max_; 
   rub_max_bool = (rub_max_.array() >= Scalar(0.)).matrix().template cast<Scalar>() ; 
   rub_max_ = rub_max_.cwiseMax(Scalar(0.)) ; 
 
@@ -118,8 +118,8 @@ void ActionModelQuadrupedTimeTpl<Scalar>::calcDiff(const boost::shared_ptr<croco
   d->Lx.template head<12>() = (state_weights_.array()* d->r.template head<12>().array()).matrix() ;
   d->Lx.template segment<8>(12) = (heuristic_weights_.array()* d->r.template segment<8>(12).array()).matrix() ;
   
-  d->Lu << dt_bound_weight_cmd *(- rub_max_[0] + rub_max_[1]) ;
-  d->Lu +=   dt_weight_command * d->r.template tail<1>() ; 
+  d->Lu << dt_bound_weight_cmd * std::copysign(1., u(0))* (- rub_max_[0] + rub_max_[1]) ;
+  d->Lu +=   dt_weight_command * std::copysign(1., u(0))* d->r.template tail<1>() ; 
   
   // Hessian : Lxx
   d->Lxx.diagonal().head(12) = (state_weights_.array() * state_weights_.array()).matrix() ;  
@@ -130,7 +130,7 @@ void ActionModelQuadrupedTimeTpl<Scalar>::calcDiff(const boost::shared_ptr<croco
   // Dynamic derivatives
   d->Fx.setIdentity();
   d->Fx(20,20) = Scalar(0.) ;
-  d->Fu.block(20,0,1,1) << Scalar(1);  
+  d->Fu.block(20,0,1,1) << std::copysign(1., u(0));  
 
 }
 
