@@ -67,6 +67,9 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   const bool& get_relative_forces() const ;
   void set_relative_forces(const bool& rel_forces) ;
 
+  const bool& get_implicit_integration() const ;
+  void set_implicit_integration(const bool& implicit) ;
+
 
   // Update the model depending if the foot in contact with the ground 
   // or the new lever arms
@@ -96,6 +99,7 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   Scalar min_fz_in_contact ; 
   Scalar max_fz ; 
   bool relative_forces ;
+  bool implicit_integration ;
 
   typename Eigen::Matrix<Scalar, 12, 1 > uref_ ;
 

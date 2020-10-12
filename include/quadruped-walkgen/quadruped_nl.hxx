@@ -65,6 +65,10 @@ ActionModelQuadrupedNonLinearTpl<Scalar>::ActionModelQuadrupedNonLinearTpl()
   sh_weight = Scalar(10.) ;
   sh_ub_max_.setZero() ; 
   psh.setZero() ;
+
+  // Implicit integration 
+  // V+ = V + dt*B*u   ; P+ = P + dt*V+ != explicit : P+ = P + dt*V
+  implicit_integration = true ; 
 }
 
 

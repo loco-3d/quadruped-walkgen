@@ -62,6 +62,10 @@ ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
   sh_ub_max_.setZero() ; 
   psh.setZero() ; 
   gait.setZero() ;
+
+  // Implicit integration 
+  // V+ = V + dt*B*u   ; P+ = P + dt*V+ != explicit : P+ = P + dt*V
+  implicit_integration = true ; 
 }
 
 
@@ -99,8 +103,15 @@ void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::Ac
  
   // Discrete dynamic : A*x + B*u + g
   d->xnext << A.diagonal().cwiseProduct(x) + g ; 
-  d->xnext.template head<6>() = d->xnext.template head<6>() + A.topRightCorner(6,6).diagonal().cwiseProduct(x.tail(6)) ;
   d->xnext.template tail<6>() = d->xnext.template tail<6>() + B.block(6,0,6,12)*u;
+
+  // Explicit : d->xnext.template head<6>() = d->xnext.template head<6>() + A.topRightCorner(6,6).diagonal().cwiseProduct(d->xnext.tail(6))   ;
+  if (implicit_integration){
+    d->xnext.template head<6>() = d->xnext.template head<6>() + A.topRightCorner(6,6).diagonal().cwiseProduct(d->xnext.tail(6))   ;
+  }
+  else{
+    d->xnext.template head<6>() = d->xnext.template head<6>() + A.topRightCorner(6,6).diagonal().cwiseProduct(x.tail(6))   ;
+  }
   
   // Residual cost on the state and force norm
   d->r.template head<12>() =  state_weights_.cwiseProduct(x - xref_);
@@ -206,6 +217,9 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
   // Dynamic derivatives
   d->Fx << A;
   d->Fu << B;  
+  if (implicit_integration) {
+    d->Fu.block(0,0,6,12) << dt_*B.block(6,0,6,12) ; 
+  }
 }
 
 
@@ -379,6 +393,17 @@ void ActionModelQuadrupedTpl<Scalar>::set_relative_forces(const bool& rel_forces
   }
 }
 
+
+// To set implicit integration 
+template <typename Scalar>
+const bool& ActionModelQuadrupedTpl<Scalar>::get_implicit_integration() const {
+  return implicit_integration ;
+}
+template <typename Scalar>
+void ActionModelQuadrupedTpl<Scalar>::set_implicit_integration(const bool& implicit) {
+  implicit_integration = implicit ; 
+
+}
 
 ////////////////////////
 // Update current model 
