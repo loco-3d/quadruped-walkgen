@@ -9,6 +9,11 @@ template <typename Scalar>
 ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
     : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(12), 12, 24)
   {
+
+  // Relative forces to compute the norm mof the command  
+  relative_forces = false ; 
+  uref_.setZero() ; 
+
   // Model parameters
   mu = Scalar(1) ; 
   dt_ = Scalar(0.02) ; 
@@ -57,6 +62,10 @@ ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
   sh_ub_max_.setZero() ; 
   psh.setZero() ; 
   gait.setZero() ;
+
+  // Implicit integration 
+  // V+ = V + dt*B*u   ; P+ = P + dt*V+ != explicit : P+ = P + dt*V
+  implicit_integration = true ; 
 }
 
 
@@ -94,12 +103,19 @@ void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::Ac
  
   // Discrete dynamic : A*x + B*u + g
   d->xnext << A.diagonal().cwiseProduct(x) + g ; 
-  d->xnext.template head<6>() = d->xnext.template head<6>() + A.topRightCorner(6,6).diagonal().cwiseProduct(x.tail(6)) ;
   d->xnext.template tail<6>() = d->xnext.template tail<6>() + B.block(6,0,6,12)*u;
+
+  // Explicit : d->xnext.template head<6>() = d->xnext.template head<6>() + A.topRightCorner(6,6).diagonal().cwiseProduct(d->xnext.tail(6))   ;
+  if (implicit_integration){
+    d->xnext.template head<6>() = d->xnext.template head<6>() + A.topRightCorner(6,6).diagonal().cwiseProduct(d->xnext.tail(6))   ;
+  }
+  else{
+    d->xnext.template head<6>() = d->xnext.template head<6>() + A.topRightCorner(6,6).diagonal().cwiseProduct(x.tail(6))   ;
+  }
   
   // Residual cost on the state and force norm
   d->r.template head<12>() =  state_weights_.cwiseProduct(x - xref_);
-  d->r.template tail<12>() =  force_weights_.cwiseProduct(u);
+  d->r.template tail<12>() =  force_weights_.cwiseProduct(u - uref_);
 
   // Friction cone 
   for (int i=0; i<4; i=i+1){
@@ -201,6 +217,9 @@ void ActionModelQuadrupedTpl<Scalar>::calcDiff(const boost::shared_ptr<crocoddyl
   // Dynamic derivatives
   d->Fx << A;
   d->Fu << B;  
+  if (implicit_integration) {
+    d->Fu.block(0,0,6,12) << dt_*B.block(6,0,6,12) ; 
+  }
 }
 
 
@@ -355,6 +374,36 @@ void ActionModelQuadrupedTpl<Scalar>::set_shoulder_weight(const Scalar& weight) 
   sh_weight = weight; 
 }
 
+// to modify the cost on the command : || fz - m*g/nb contact ||^2
+// --> set to True
+template <typename Scalar>
+const bool& ActionModelQuadrupedTpl<Scalar>::get_relative_forces() const {
+  return relative_forces;
+}
+template <typename Scalar>
+void ActionModelQuadrupedTpl<Scalar>::set_relative_forces(const bool& rel_forces) {
+  relative_forces = rel_forces; 
+  uref_.setZero() ;
+  if (relative_forces){
+    for (int i=0; i<4; i=i+1){
+      if (gait[i] == 1){
+        uref_[3*i+2] = (Scalar(9.81)*mass)/(gait.sum()) ;
+      }
+    }  
+  }
+}
+
+
+// To set implicit integration 
+template <typename Scalar>
+const bool& ActionModelQuadrupedTpl<Scalar>::get_implicit_integration() const {
+  return implicit_integration ;
+}
+template <typename Scalar>
+void ActionModelQuadrupedTpl<Scalar>::set_implicit_integration(const bool& implicit) {
+  implicit_integration = implicit ; 
+
+}
 
 ////////////////////////
 // Update current model 
@@ -379,6 +428,16 @@ void ActionModelQuadrupedTpl<Scalar>::update_model(const Eigen::Ref<const typena
 
   xref_ = xref ; 
   gait = S ;
+
+  // Set ref u vector according to nb of contact
+  uref_.setZero() ;
+  if (relative_forces){
+    for (int i=0; i<4; i=i+1){
+      if (gait[i] == 1){
+        uref_[3*i+2] = (Scalar(9.81)*mass)/(gait.sum()) ;
+      }
+    }  
+  }
 
   R_tmp << cos(xref(5,0)),-sin(xref(5,0)),0,
       sin(xref(5,0)),cos(xref(5,0)),0,

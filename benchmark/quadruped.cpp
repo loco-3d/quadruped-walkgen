@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
   // Control cycle during one gait period  
   unsigned int N = 16;  // number of nodes
   unsigned int T = 1000;  // number of trials
-  unsigned int MAXITER = 5;
+  unsigned int MAXITER = 1;
   if (argc > 1) {
     T = atoi(argv[1]);
     MAXITER = atoi(argv[2]); ; 
@@ -190,6 +190,19 @@ int main(int argc, char* argv[]) {
   std::cout << "  UpdateModel [ms]: " << avrg_duration << " (" << min_duration << "-" << max_duration << ")"
             << std::endl;
 
+
+  // Solving the optimal control problem  
+  for (unsigned int i = 0; i < T; ++i) {
+    crocoddyl::Timer timer;
+    ddp.solve(xs, us, MAXITER);
+    duration[i] = timer.get_duration();
+  }
+
+  avrg_duration = duration.sum() / T;
+  min_duration = duration.minCoeff();
+  max_duration = duration.maxCoeff();
+  std::cout << "  DDP.solve [ms]: " << avrg_duration << " (" << min_duration << "-" << max_duration << ")"
+            << std::endl;
 
   // Solving the optimal control problem  
   for (unsigned int i = 0; i < T; ++i) {

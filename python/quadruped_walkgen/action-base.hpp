@@ -12,7 +12,11 @@
 #include <quadruped-walkgen/quadruped.hpp>
 #include <quadruped-walkgen/quadruped_nl.hpp>
 #include <quadruped-walkgen/quadruped_augmented.hpp>
+#include <quadruped-walkgen/quadruped_augmented_time.hpp>
 #include <quadruped-walkgen/quadruped_step.hpp>
+#include <quadruped-walkgen/quadruped_time.hpp>
+#include <quadruped-walkgen/quadruped_step_time.hpp>
+#include <quadruped-walkgen/quadruped_step_period.hpp>
 #include "crocoddyl/core/utils/exception.hpp"
 
 namespace quadruped_walkgen {

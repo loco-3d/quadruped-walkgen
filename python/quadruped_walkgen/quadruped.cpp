@@ -75,6 +75,10 @@ void exposeActionQuadruped() {
       .add_property("A",
                     bp::make_function(&ActionModelQuadruped::get_A, bp::return_internal_reference<>()),
                      "get A matrix")
+      .add_property("relative_forces", bp::make_function(&ActionModelQuadruped::get_relative_forces, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadruped::set_relative_forces) , "relative norm ")
+      .add_property("implicit_integration", bp::make_function(&ActionModelQuadruped::get_implicit_integration, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadruped::set_implicit_integration) , "Bool : to set implicit integration : P+ = P + dt*V+")
       .add_property("B",
                     bp::make_function(&ActionModelQuadruped::get_B, bp::return_internal_reference<>()),
                      "get B matrix") ;

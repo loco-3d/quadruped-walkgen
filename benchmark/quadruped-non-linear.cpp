@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
   // Control cycle during one gait period  
   unsigned int N = 16;  // number of nodes
   unsigned int T = 1000;  // number of trials
-  unsigned int MAXITER = 5;
+  unsigned int MAXITER = 1;
   if (argc > 1) {
     T = atoi(argv[1]);
     MAXITER = atoi(argv[2]); ; 
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
   // Creating the initial state vector (size x12) [x,y,z,Roll,Pitch,Yaw,Vx,Vy,Vz,Wroll,Wpitch,Wyaw]
   // Perturbation of Vx = 0.2m.s-1
   Eigen::Matrix<double,12,1> x0 ; 
-  x0 << 0,0,0.2 , 0,0,0 , 0.2,0,0 ,0,0,0 ; 
+  x0 << 0,0,0.25 , 0.15,0.1,0 , 0.2,0,0 ,0,0,0 ; 
   Eigen::Matrix<double,4,1> S ; 
   S << 1,0,0,1 ; 
 

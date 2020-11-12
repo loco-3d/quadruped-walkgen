@@ -9,6 +9,10 @@ template <typename Scalar>
 ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl()
     : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(20), 12, 32)
   {
+    // Relative forces to compute the norm mof the command  
+  relative_forces = false ; 
+  uref_.setZero() ; 
+
   // Model parameters
   mu = Scalar(1) ; 
   dt_ = Scalar(0.02) ; 
@@ -127,7 +131,7 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calc(const boost::shared_ptr<croc
   // Residual cost on the state and force norm
   d->r.template head<12>() =  state_weights_.cwiseProduct(x.head(12) - xref_);
   d->r.template segment<8>(12) =  ((shoulder_weights_.cwiseProduct(x.tail(8) - pshoulder_)).array() * gait_double.array() ).matrix();
-  d->r.template tail<12>() =  force_weights_.cwiseProduct(u);
+  d->r.template tail<12>() =  force_weights_.cwiseProduct(u - uref_);
 
   // Friction cone 
   for (int i=0; i<4; i=i+1){
@@ -502,6 +506,24 @@ const typename Eigen::Matrix<Scalar, 12, 12>& ActionModelQuadrupedAugmentedTpl<S
   return B;
 }
 
+// to modify the cost on the command : || fz - m*g/nb contact ||^2
+// --> set to True
+template <typename Scalar>
+const bool& ActionModelQuadrupedAugmentedTpl<Scalar>::get_relative_forces() const {
+  return relative_forces;
+}
+template <typename Scalar>
+void ActionModelQuadrupedAugmentedTpl<Scalar>::set_relative_forces(const bool& rel_forces) {
+  relative_forces = rel_forces; 
+  uref_.setZero() ;
+  if (relative_forces){
+    for (int i=0; i<4; i=i+1){
+      if (gait[i] == 1){
+        uref_[3*i+2] = (Scalar(9.81)*mass)/(gait.sum()) ;
+      }
+    }  
+  }
+}
 
 ////////////////////////
 // Update current model 
@@ -526,6 +548,16 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::update_model(const Eigen::Ref<con
 
   xref_ = xref ; 
   gait = S ;
+  
+  uref_.setZero() ;
+  if (relative_forces){
+    for (int i=0; i<4; i=i+1){
+      if (gait[i] == 1){
+        uref_[3*i+2] = (Scalar(9.81)*mass)/(gait.sum()) ;
+      }
+    }  
+  }
+
   for (int i=0; i<4; i=i+1){
     gait_double(2*i,0) = gait(i,0) ; 
     gait_double(2*i + 1 ,0) = gait(i,0) ; 

@@ -73,6 +73,8 @@ void exposeActionQuadrupedNonLinear() {
                     bp::make_function(&ActionModelQuadrupedNonLinear::set_max_fz_contact) , "dt \n Warning : The model needs to be updated")
       .add_property("gI", bp::make_function(&ActionModelQuadrupedNonLinear::get_gI, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedNonLinear::set_gI) , "Inertia matrix of the robot in body frame (found in urdf) \n Warning : The model needs to be updated")
+     .add_property("relative_forces", bp::make_function(&ActionModelQuadrupedNonLinear::get_relative_forces, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedNonLinear::set_relative_forces) , "relative norm ")
       .add_property("A",
                     bp::make_function(&ActionModelQuadrupedNonLinear::get_A, bp::return_internal_reference<>()),
                      "get A matrix")

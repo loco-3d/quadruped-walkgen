@@ -9,6 +9,10 @@ template <typename Scalar>
 ActionModelQuadrupedNonLinearTpl<Scalar>::ActionModelQuadrupedNonLinearTpl()
     : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(12), 12, 24)
   {
+    // Relative forces to compute the norm mof the command  
+  relative_forces = false ; 
+  uref_.setZero() ; 
+
   // Model parameters
   mu = Scalar(1) ; 
   dt_ = Scalar(0.02) ; 
@@ -61,6 +65,10 @@ ActionModelQuadrupedNonLinearTpl<Scalar>::ActionModelQuadrupedNonLinearTpl()
   sh_weight = Scalar(10.) ;
   sh_ub_max_.setZero() ; 
   psh.setZero() ;
+
+  // Implicit integration 
+  // V+ = V + dt*B*u   ; P+ = P + dt*V+ != explicit : P+ = P + dt*V
+  implicit_integration = true ; 
 }
 
 
@@ -112,7 +120,7 @@ void ActionModelQuadrupedNonLinearTpl<Scalar>::calc(const boost::shared_ptr<croc
   
   // Residual cost on the state and force norm
   d->r.template head<12>() =  state_weights_.cwiseProduct(x - xref_);
-  d->r.template tail<12>() =  force_weights_.cwiseProduct(u);
+  d->r.template tail<12>() =  force_weights_.cwiseProduct(u- uref_);
 
   // Friction cone + shoulder height
   for (int i=0; i<4; i=i+1){
@@ -382,6 +390,25 @@ const typename Eigen::Matrix<Scalar, 12, 12>& ActionModelQuadrupedNonLinearTpl<S
   return B;
 }
 
+// to modify the cost on the command : || fz - m*g/nb contact ||^2
+// --> set to True
+template <typename Scalar>
+const bool& ActionModelQuadrupedNonLinearTpl<Scalar>::get_relative_forces() const {
+  return relative_forces;
+}
+template <typename Scalar>
+void ActionModelQuadrupedNonLinearTpl<Scalar>::set_relative_forces(const bool& rel_forces) {
+  relative_forces = rel_forces; 
+  uref_.setZero() ;
+  if (relative_forces){
+    for (int i=0; i<4; i=i+1){
+      if (gait[i] == 1){
+        uref_[3*i+2] = (Scalar(9.81)*mass)/(gait.sum()) ;
+      }
+    }  
+  }
+}
+
 
 ////////////////////////
 // Update current model 
@@ -406,6 +433,16 @@ void ActionModelQuadrupedNonLinearTpl<Scalar>::update_model(const Eigen::Ref<con
 
   xref_ = xref ; 
   gait = S ;
+
+  // Set ref u vector according to nb of contact
+  uref_.setZero() ;
+  if (relative_forces){
+    for (int i=0; i<4; i=i+1){
+      if (gait[i] == 1){
+        uref_[3*i+2] = (Scalar(9.81)*mass)/(gait.sum()) ;
+      }
+    }  
+  }
 
   R_tmp << cos(xref(5,0)),-sin(xref(5,0)),0,
       sin(xref(5,0)),cos(xref(5,0)),0,

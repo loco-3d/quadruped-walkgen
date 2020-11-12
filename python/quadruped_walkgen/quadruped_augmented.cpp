@@ -88,6 +88,8 @@ void exposeActionQuadrupedAugmented() {
                     bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_weight) , "shoulder Weight term (scalar) ")
       .add_property("symmetry_term", bp::make_function(&ActionModelQuadrupedAugmented::get_symmetry_term, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_symmetry_term) , "symmetry term for the foot position heuristic")
+      .add_property("relative_forces", bp::make_function(&ActionModelQuadrupedAugmented::get_relative_forces, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_relative_forces) , "activate relative forces ||fz-mg/nb_contact||^2") 
       .add_property("centrifugal_term", bp::make_function(&ActionModelQuadrupedAugmented::get_centrifugal_term, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_centrifugal_term) , "centrifugal term for the foot position heuristic") 
       .add_property("T_gait", bp::make_function(&ActionModelQuadrupedAugmented::get_T_gait, bp::return_value_policy<bp::return_by_value>()),

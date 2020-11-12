@@ -13,6 +13,10 @@ SET(${PROJECT_NAME}_PYTHON_BINDINGS_SOURCES
   quadruped_nl.cpp
   quadruped_augmented.cpp
   quadruped_step.cpp
+  quadruped_augmented_time.cpp
+  quadruped_step_time.cpp
+  quadruped_step_period.cpp
+  quadruped_time.cpp
   )
 ADD_LIBRARY(${PYTHON_DIR}_pywrap SHARED ${${PROJECT_NAME}_PYTHON_BINDINGS_SOURCES})
 SET_TARGET_PROPERTIES(${PYTHON_DIR}_pywrap PROPERTIES SUFFIX ${PYTHON_EXT_SUFFIX})
