@@ -204,6 +204,19 @@ int main(int argc, char* argv[]) {
   std::cout << "  DDP.solve [ms]: " << avrg_duration << " (" << min_duration << "-" << max_duration << ")"
             << std::endl;
 
+  // Solving the optimal control problem  
+  for (unsigned int i = 0; i < T; ++i) {
+    crocoddyl::Timer timer;
+    ddp.solve(xs, us, MAXITER);
+    duration[i] = timer.get_duration();
+  }
+
+  avrg_duration = duration.sum() / T;
+  min_duration = duration.minCoeff();
+  max_duration = duration.maxCoeff();
+  std::cout << "  DDP.solve [ms]: " << avrg_duration << " (" << min_duration << "-" << max_duration << ")"
+            << std::endl;
+
 
 
   // Running calc

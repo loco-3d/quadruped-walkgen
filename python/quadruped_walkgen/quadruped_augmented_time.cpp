@@ -89,6 +89,10 @@ void exposeActionQuadrupedAugmentedTime() {
       .add_property("Cost",
                     bp::make_function(&ActionModelQuadrupedAugmentedTime::get_cost, bp::return_internal_reference<>()),
                      "get log cost")
+      .add_property("shoulder_hlim", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_shoulder_hlim, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmentedTime::set_shoulder_hlim) , "Shoulder height limit ")
+      .add_property("shoulderWeights", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_shoulder_weight, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmentedTime::set_shoulder_weight) , "shoulder Weight term (scalar) ")
       .add_property("relative_forces", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_relative_forces, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmentedTime::set_relative_forces) , "relative norm ")
       .add_property("symmetry_term", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_symmetry_term, bp::return_value_policy<bp::return_by_value>()),

@@ -69,7 +69,9 @@ void exposeActionQuadrupedStepTime() {
       .add_property("vlim", bp::make_function(&ActionModelQuadrupedStepTime::get_vlim, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedStepTime::set_vlim) , "Gait period, used to compute the symmetry term") 
       .add_property("nb_nodes", bp::make_function(&ActionModelQuadrupedStepTime::get_nb_nodes, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedStepTime::set_nb_nodes) , "Gait period, used to compute the symmetry term")                 
+                    bp::make_function(&ActionModelQuadrupedStepTime::set_nb_nodes) , "Gait period, used to compute the symmetry term")  
+      .add_property("first_step", bp::make_function(&ActionModelQuadrupedStepTime::get_first_step, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedStepTime::set_first_step) , "bool thats indicates xhether it is the first step foot, otherwise function cost is much simpler")               
       .add_property("Cost",
                     bp::make_function(&ActionModelQuadrupedStepTime::get_cost, bp::return_internal_reference<>()),
                      "get log cost")

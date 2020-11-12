@@ -67,6 +67,9 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
   const Scalar& get_speed_weight() const;
   void set_speed_weight(const Scalar& weight_);
 
+  const bool& get_first_step() const ;
+  void set_first_step(const bool& first) ;
+
   // get cost
   const typename Eigen::Matrix<Scalar, 7, 1 >& get_cost() const;  
 
@@ -88,12 +91,22 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
   Scalar beta_lim ;
   bool centrifugal_term ; 
   bool symmetry_term ; 
+  // indicates whether it t the 1st step, otherwise the cost function is much simpler (acc, speed = 0)
+  bool first_step ; 
 
   typename Eigen::Matrix<Scalar, 12, 1> state_weights_;
   typename Eigen::Matrix<Scalar, 4, 1> step_weights_;  
   typename Eigen::Matrix<Scalar, 8, 1> heuristicWeights;
   typename MathBase::Matrix3s R_tmp ;
 
+  typename  Eigen::Array<Scalar, 3, 1 > alpha ; 
+  typename  Eigen::Array<Scalar, 3, 4 > alpha2 ; 
+  typename  Eigen::Array<Scalar, 3, 3 > b_coeff ; 
+  typename  Eigen::Array<Scalar, 3, 12 > b_coeff2 ; 
+  typename  Eigen::Matrix<Scalar, 3, 4> lfeet ;
+  typename Eigen::Array<Scalar, 3, 4 > rub_max_first ; 
+  typename Eigen::Array<Scalar, 3, 2 > rub_max_first_2 ;
+  typename Eigen::Array<Scalar, 3, 2 > rub_max_bool_first ; 
   
   
   typename Eigen::Matrix<Scalar, 8, 4 > B;

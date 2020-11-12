@@ -90,6 +90,13 @@ class ActionModelQuadrupedAugmentedTimeTpl : public crocoddyl::ActionModelAbstra
   const bool& get_relative_forces() const ;
   void set_relative_forces(const bool& rel_forces) ;
 
+  // Set parameter relative to the shoulder height cost
+  const Scalar& get_shoulder_hlim() const;
+  void set_shoulder_hlim(const Scalar& hlim);
+
+  const Scalar& get_shoulder_weight() const;
+  void set_shoulder_weight(const Scalar& weight);
+
 
 
   // Update the model depending if the foot in contact with the ground 
@@ -180,6 +187,12 @@ class ActionModelQuadrupedAugmentedTimeTpl : public crocoddyl::ActionModelAbstra
   // Log cost
   bool log_cost ; 
   typename Eigen::Matrix<Scalar, 7, 1> cost_ ; 
+
+  // Cost relative to the shoulder height
+  typename Eigen::Matrix<Scalar, 3 , 4 > psh; 
+  typename Eigen::Matrix<Scalar, 4, 1 > sh_ub_max_ ; 
+  Scalar sh_weight ; 
+  Scalar sh_hlim ;
 
 };
 

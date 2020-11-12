@@ -78,7 +78,15 @@ ActionModelQuadrupedAugmentedTimeTpl<Scalar>::ActionModelQuadrupedAugmentedTimeT
   dt_bound_weight = Scalar(0.) ;  
   // Log cost
   cost_.setZero() ; 
-  log_cost = true ; 
+  log_cost = false ; 
+
+  // // Used for shoulder height weight
+  // pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),  Scalar(-0.1946) , 
+  //                 Scalar(0.15005) ,  Scalar(-0.15005)  , Scalar(0.15005)  ,  Scalar(-0.15005) ; 
+  sh_hlim = Scalar(0.225) ; 
+  sh_weight = Scalar(10.) ;
+  sh_ub_max_.setZero() ; 
+  psh.setZero() ;
 }
 
 
@@ -116,6 +124,19 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calc(const boost::shared_ptr<
 
       B.block(9 , 3*i  , 3,3) << x.tail(1)[0] * R* R_tmp; 
       B.block(6 , 3*i  , 3,3).diagonal() << x.tail(1)[0] / mass  ,  x.tail(1)[0]  / mass  ,  x.tail(1)[0]  / mass  ; 
+
+       // Compute pdistance of the shoulder wrt contact point
+      psh.block(0,i,3,1) << x(0) + pshoulder_0(0,i) - pshoulder_0(1,i)*x(5) - x(12+2*i), 
+                            x(1) + pshoulder_0(1,i) + pshoulder_0(0,i)*x(5) -  x(12+2*i+1), 
+                            x(2) + pshoulder_0(1,i)*x(3) - pshoulder_0(0,i)*x(4);
+    }
+    else{
+      // Compute pdistance of the shoulder wrt contact point
+      psh.block(0,i,3,1).setZero() ; 
+       // Compute pdistance of the shoulder wrt contact point
+      // psh.block(0,i,3,1) << x(0) + pshoulder_0(0,i) - pshoulder_0(1,i)*x(5) - x(12+2*i), 
+      //                       x(1) + pshoulder_0(1,i) + pshoulder_0(0,i)*x(5) -  x(12+2*i+1), 
+      //                       x(2) + pshoulder_0(1,i)*x(3) - pshoulder_0(0,i)*x(4);
     }    
   } ; 
  
@@ -145,12 +166,22 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calc(const boost::shared_ptr<
   rub_max_dt << dt_min_ - x.tail(1) , x.tail(1) - dt_max_ ; 
   rub_max_dt_bool = (rub_max_dt.array() >= Scalar(0.)).matrix().template cast<Scalar>() ; 
   rub_max_dt = rub_max_dt.cwiseMax(Scalar(0.)) ; 
+
+
+  // Shoulder height weight
+  sh_ub_max_ << psh.block(0,0,3,1).squaredNorm() - sh_hlim*sh_hlim  ,
+                psh.block(0,1,3,1).squaredNorm() - sh_hlim*sh_hlim  ,
+                psh.block(0,2,3,1).squaredNorm() - sh_hlim*sh_hlim  , 
+                psh.block(0,3,3,1).squaredNorm() - sh_hlim*sh_hlim  ; 
+  
+  sh_ub_max_ = sh_ub_max_.cwiseMax(Scalar(0.)) ;   
+  
   
   // Cost computation 
   d->cost =  Scalar(0.5) * d->r.segment(12,8).transpose() * d->r.segment(12,8)   + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm()
           + Scalar(0.5)*( (last_position_weights_.cwiseProduct(x.segment(12,8) - pref_) ).array() * gait_double.array() ).matrix().squaredNorm() 
           + dt_bound_weight * Scalar(0.5) * rub_max_dt.squaredNorm() +  x(20) * Scalar(0.5) * d->r.head(12).transpose() * d->r.head(12) + 
-          x(20)*Scalar(0.5) * d->r.tail(12).transpose() * d->r.tail(12);
+          x(20)*Scalar(0.5) * d->r.tail(12).transpose() * d->r.tail(12) + sh_weight * Scalar(0.5) * sh_ub_max_.sum() ;
   
   if (log_cost){
     cost_[0] = x(20) * Scalar(0.5)*d->r.head(12).transpose()*d->r.head(12) ; // state
@@ -180,6 +211,7 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calcDiff(const boost::shared_
   ActionDataQuadrupedAugmentedTimeTpl<Scalar>* d = static_cast<ActionDataQuadrupedAugmentedTimeTpl<Scalar>*>(data.get());  
   
   // Cost derivatives : Lx
+  d->Lx.setZero() ;
   d->Lx.template head<12>() = x(20)*(state_weights_.array()* d->r.template head<12>().array()).matrix() ;
   d->Lx.template segment<8>(12)  = (heuristicWeights.array() * d->r.template segment<8>(12).array()).matrix() 
                                 + ((last_position_weights_.cwiseProduct(x.segment(12,8) - pref_) ).array() * gait_double.array() * last_position_weights_.array()).matrix() ; 
@@ -196,6 +228,7 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calcDiff(const boost::shared_
   d->Lu = d->Lu + x(20)*(force_weights_.array()*d->r.template tail<12>().array()).matrix() ; 
   
   // Hessian : Lxx
+  d->Lxx.setZero() ; 
   d->Lxx.diagonal().head(12) = x(20)*(state_weights_.array() * state_weights_.array()).matrix() ;
   d->Lxx.diagonal().segment(12,8) =  ( gait_double.array() * heuristicWeights.array() * heuristicWeights.array() ).matrix() ; 
   d->Lxx.diagonal().segment(12,8) +=  ( gait_double.array() * last_position_weights_.array() * last_position_weights_.array() ).matrix() ; 
@@ -205,6 +238,61 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calcDiff(const boost::shared_
   // New cost : partial derivatives of 20 and state (0--11)
   d->Lxx.col(20).head(12) = (state_weights_.array()* d->r.template head<12>().array()).matrix() ; 
   d->Lxx.row(20).head(12) = d->Lxx.col(20).head(12) ; 
+
+  for (int j=0 ; j<4 ; j=j+1){
+    if (sh_ub_max_[j] > Scalar(0.) ){
+
+      d->Lx(0,0) += sh_weight*psh(0,j) ; 
+      d->Lx(1,0) += sh_weight*psh(1,j) ; 
+      d->Lx(2,0) += sh_weight*psh(2,j) ; 
+      d->Lx(3,0) += sh_weight*pshoulder_0(1,j)*psh(2,j) ; 
+      d->Lx(4,0) += -sh_weight*pshoulder_0(0,j)*psh(2,j) ; 
+      d->Lx(5,0) += sh_weight*( -pshoulder_0(1,j)*psh(0,j) + pshoulder_0(0,j)*psh(1,j) ) ;
+
+      d->Lx(12+2*j,0) += -sh_weight*psh(0,j) ; 
+      d->Lx(12+2*j+1,0) += -sh_weight*psh(1,j) ; 
+
+      d->Lxx(0,0) += sh_weight ; 
+      d->Lxx(1,1) += sh_weight ; 
+      d->Lxx(2,2) += sh_weight ; 
+      d->Lxx(3,3) += sh_weight*pshoulder_0(1,j)*pshoulder_0(1,j) ; 
+      d->Lxx(3,3) += sh_weight*pshoulder_0(0,j)*pshoulder_0(0,j) ;
+      d->Lxx(5,5) += sh_weight*( pshoulder_0(1,j)*pshoulder_0(1,j) + pshoulder_0(0,j)*pshoulder_0(0,j) ) ;
+
+      d->Lxx(12 + 2*j,12 + 2*j) += sh_weight ;
+      d->Lxx(12 + 2*j +1 ,12 + 2*j + 1) += sh_weight ;
+
+
+      
+      d->Lxx(0,5) += -sh_weight*pshoulder_0(1,j) ;
+      d->Lxx(5,0) += -sh_weight*pshoulder_0(1,j) ;
+
+      d->Lxx(1,5) += sh_weight*pshoulder_0(0,j) ;
+      d->Lxx(5,1) += sh_weight*pshoulder_0(0,j) ;
+
+      d->Lxx(2,3) += sh_weight*pshoulder_0(1,j) ;
+      d->Lxx(2,4) += -sh_weight*pshoulder_0(0,j) ;
+      d->Lxx(3,2) += sh_weight*pshoulder_0(1,j) ;
+      d->Lxx(4,2) += -sh_weight*pshoulder_0(0,j) ;
+
+      d->Lxx(3,4) += -sh_weight*pshoulder_0(1,j)*pshoulder_0(0,j) ;
+      d->Lxx(4,3) += -sh_weight*pshoulder_0(1,j)*pshoulder_0(0,j) ;  
+
+
+
+      d->Lxx(0,12+2*j) += -sh_weight ;
+      d->Lxx(12+2*j,0) += -sh_weight ;
+
+      d->Lxx(5,12+2*j) += sh_weight*pshoulder_0(1,j) ;
+      d->Lxx(12+2*j, 5) += sh_weight*pshoulder_0(1,j) ;
+
+      d->Lxx(1,12+2*j+1) += -sh_weight ; 
+      d->Lxx(12+2*j+1 , 1) += -sh_weight ; 
+
+      d->Lxx(5,12+2*j+1) += -sh_weight*pshoulder_0(0,j) ;
+      d->Lxx(12+2*j+1 , 5) += -sh_weight*pshoulder_0(0,j) ; 
+    }
+  }  
     
   // Hessian : Luu
   // Matrix friction cone hessian (20x12)
@@ -416,6 +504,26 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_max_fz_contact(const Scal
   for (int i=0; i<4; i=i+1){
     ub(6*i+5) = max_fz ;
   }
+}
+
+template <typename Scalar>
+const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_shoulder_hlim() const {
+  return sh_hlim;
+}
+template <typename Scalar>
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_shoulder_hlim(const Scalar& hlim) {
+  // The model need to be updated after this changed
+  sh_hlim = hlim; 
+}
+
+template <typename Scalar>
+const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_shoulder_weight() const {
+  return sh_weight;
+}
+template <typename Scalar>
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_shoulder_weight(const Scalar& weight) {
+  // The model need to be updated after this changed
+  sh_weight = weight; 
 }
 
 ////////////////////////////////////////////
