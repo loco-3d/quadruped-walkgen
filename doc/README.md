@@ -28,7 +28,7 @@ The cost function consists of : cf cost_function.pdf
 
 
 
-2 - MPC non linear : dynamics explained in non_linear_dynamics.pdf    
+2 - MPC non linear : non_linear_dynamics.pdf    
 ------------------------------------------------------------------    
 
 --> quadruped_nl Model :    
