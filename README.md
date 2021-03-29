@@ -3,9 +3,9 @@
 The objective of this project is the writing of a crocoddyl class in C ++ to use it in a simulation of the quadruped. It is based on a simplified dynamical model of the quadruped and used to solve a MPC problem. 
 The quadruped action model class is mainly based on the unicycle example class which derives from on the ActionModelAbstract class.
 
-To install :
-git clone https://gitlab.laas.fr/loco-3d/quadruped-walkgen.git
-git checkout devel1
+To install :  
+git clone https://gitlab.laas.fr/loco-3d/quadruped-walkgen.git  
+git checkout devel1  
 git submodule update --init
 
 mkdir build_  
@@ -13,9 +13,9 @@ cd build_
 cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=your_path  
 make install
 
-Python binding :
---> add your_path to python path 
---> import quadruped-walkgen
+Python binding :  
+--> add your_path to python path  
+--> import quadruped-walkgen  
 
 To run the benchmark in cpp, from the build directory in release mode:  
 make -s benchmarks-cpp-quadruped INPUT="1000 5"  
