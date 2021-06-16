@@ -25,7 +25,7 @@ ActionModelQuadrupedStepTpl<Scalar>::ActionModelQuadrupedStepTpl()
   pcentrifugal_tmp.setZero() ; 
   centrifugal_term = true ; 
   symmetry_term = true ; 
-  T_gait = Scalar(0.64) ; 
+  T_gait = Scalar(0.32) ; 
   
   step_weights_.setConstant(Scalar(1)) ;
   

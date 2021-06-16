@@ -84,8 +84,8 @@ void exposeActionQuadrupedAugmented() {
                      "get B matrix")
       .add_property("shoulder_hlim", bp::make_function(&ActionModelQuadrupedAugmented::get_shoulder_hlim, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_hlim) , "Shoulder height limit ")
-      .add_property("shoulderWeights", bp::make_function(&ActionModelQuadrupedAugmented::get_shoulder_weight, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_weight) , "shoulder Weight term (scalar) ")
+      .add_property("shoulderWeights", bp::make_function(&ActionModelQuadrupedAugmented::get_shoulder_weights, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_weights) , "shoulder Weights terms (array of size 8) ")
       .add_property("symmetry_term", bp::make_function(&ActionModelQuadrupedAugmented::get_symmetry_term, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_symmetry_term) , "symmetry term for the foot position heuristic")
       .add_property("relative_forces", bp::make_function(&ActionModelQuadrupedAugmented::get_relative_forces, bp::return_value_policy<bp::return_by_value>()),

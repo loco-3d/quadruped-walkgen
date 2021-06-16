@@ -24,12 +24,12 @@ ActionModelQuadrupedNonLinearTpl<Scalar>::ActionModelQuadrupedNonLinearTpl()
   g.setZero() ;
   g[8] = Scalar(-9.81)*dt_ ;
   gI.setZero() ; 
-  gI.diagonal() << Scalar(0.00578574) , Scalar(0.01938108) , Scalar(0.02476124) ; 
+  gI.diagonal() << Scalar(3.09249e-2) , Scalar(5.106100e-2) , Scalar(6.939757e-2);
   A.setIdentity() ; 
   A.topRightCorner(6,6) << Eigen::Matrix<Scalar, 6, 6>::Identity()*dt_ ; 
   B.setZero() ; 
   lever_arms.setZero() ; 
-  R.setZero() ; 
+  I_inv.setZero() ; 
  
 
   // Weight vectors initialization
@@ -60,8 +60,8 @@ ActionModelQuadrupedNonLinearTpl<Scalar>::ActionModelQuadrupedNonLinearTpl()
 
   // Used for shoulder height weight
   pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),  Scalar(-0.1946) , 
-                  Scalar(0.15005) ,  Scalar(-0.15005)  , Scalar(0.15005)  ,  Scalar(-0.15005) ; 
-  sh_hlim = Scalar(0.225) ; 
+                  Scalar(0.14695) ,  Scalar(-0.14695)  , Scalar(0.14695)  ,  Scalar(-0.14695) ; 
+  sh_hlim = Scalar(0.27) ;
   sh_weight = Scalar(10.) ;
   sh_ub_max_.setZero() ; 
   psh.setZero() ;
@@ -97,7 +97,7 @@ void ActionModelQuadrupedNonLinearTpl<Scalar>::calc(const boost::shared_ptr<croc
       lever_tmp = lever_arms.block(0,i,3,1) - x.block(0,0,3,1) ;
       R_tmp << 0.0, -lever_tmp[2], lever_tmp[1],
       lever_tmp[2], 0.0, -lever_tmp[0], -lever_tmp[1], lever_tmp[0], 0.0 ; 
-      B.block(9 , 3*i  , 3,3) << dt_ * R* R_tmp; 
+      B.block(9 , 3*i  , 3,3) << dt_ * I_inv * R_tmp; 
 
       // Compute pdistance of the shoulder wrt contact point
       psh.block(0,i,3,1) << x[0] + pshoulder_0(0,i) - pshoulder_0(1,i)*x[5] - lever_arms(0,i), 
@@ -230,9 +230,9 @@ void ActionModelQuadrupedNonLinearTpl<Scalar>::calcDiff(const boost::shared_ptr<
   for (int i=0; i<4; i=i+1){
     if (gait(i,0) != 0) {
       forces_3d = u.block(3*i,0,3,1) ; 
-      d->Fx.block(9,0,3,1) += - dt_ * R *( base_vector_x.cross(forces_3d) ) ;
-      d->Fx.block(9,1,3,1) += - dt_ * R *( base_vector_y.cross(forces_3d) ) ;
-      d->Fx.block(9,2,3,1) += - dt_ * R *( base_vector_z.cross(forces_3d) ) ;
+      d->Fx.block(9,0,3,1) += - dt_ * I_inv *( base_vector_x.cross(forces_3d) ) ;
+      d->Fx.block(9,1,3,1) += - dt_ * I_inv *( base_vector_y.cross(forces_3d) ) ;
+      d->Fx.block(9,2,3,1) += - dt_ * I_inv *( base_vector_z.cross(forces_3d) ) ;
     }
   }
   d->Fu << B;
@@ -448,7 +448,7 @@ void ActionModelQuadrupedNonLinearTpl<Scalar>::update_model(const Eigen::Ref<con
       sin(xref(5,0)),cos(xref(5,0)),0,
       0,0,1.0 ; 
   
-  R = (R_tmp*gI).inverse() ; // I_inv  
+  I_inv = (R_tmp.transpose() * gI * R_tmp).inverse() ; // I_inv
   lever_arms.block(0,0,2,4) = l_feet.block(0,0,2,4) ; 
 
   for (int i=0; i<4; i=i+1){

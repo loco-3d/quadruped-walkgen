@@ -111,7 +111,7 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
   typename Eigen::Matrix<Scalar, 12, 12 > A;
   typename Eigen::Matrix<Scalar, 12, 12 > B;
   typename Eigen::Matrix<Scalar, 12, 1> g;
-  typename Eigen::Matrix<Scalar, 3, 3> R ; 
+  typename Eigen::Matrix<Scalar, 3, 3> I_inv ; 
   typename MathBase::Matrix3s R_tmp ;
   typename Eigen::Matrix<Scalar, 3 , 3 > gI;
   

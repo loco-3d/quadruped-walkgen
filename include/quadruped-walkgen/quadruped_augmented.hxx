@@ -68,12 +68,12 @@ ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl()
   // bool to add heuristic for foot position
   centrifugal_term = true ; 
   symmetry_term = true ; 
-  T_gait = Scalar(0.64) ; 
+  T_gait = Scalar(0.32) ; 
 
   // // Used for shoulder height weight
   // pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),  Scalar(-0.1946) , 
   //                 Scalar(0.15005) ,  Scalar(-0.15005)  , Scalar(0.15005)  ,  Scalar(-0.15005) ; 
-  sh_hlim = Scalar(0.225) ; 
+  sh_hlim = Scalar(0.27) ; 
   sh_weight = Scalar(10.) ;
   sh_ub_max_.setZero() ; 
   psh.setZero() ;
@@ -184,12 +184,12 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calcDiff(const boost::shared_ptr<
   // Cost derivative : Lu
   for (int i=0; i<4; i=i+1){
     // r << friction_weight_*rub_max_.segment(5*i,5) ; 
-    r[1] = friction_weight_*rub_max_[5*i] ;
-    r[2] = friction_weight_*rub_max_[5*i + 1] ;
-    r[3] = friction_weight_*rub_max_[5*i + 2] ;
-    r[4] = friction_weight_*rub_max_[5*i + 3] ;
-    r[5] = friction_weight_*rub_max_[5*i + 4] ;
-    d->Lu.block(i*3,0,3,1) << r[1] - r[2] , r[3] - r[4] , -mu*(r[1] + r[2] + r[3] + r[4] ) - r[5] ;
+    r[0] = friction_weight_*rub_max_[5*i] ;
+    r[1] = friction_weight_*rub_max_[5*i + 1] ;
+    r[2] = friction_weight_*rub_max_[5*i + 2] ;
+    r[3] = friction_weight_*rub_max_[5*i + 3] ;
+    r[4] = friction_weight_*rub_max_[5*i + 4] ;
+    d->Lu.block(i*3,0,3,1) << r[0] - r[1] , r[2] - r[3] , -mu*(r[0] + r[1] + r[2] + r[3] ) - r[4] ;
   }  
   d->Lu = d->Lu + (force_weights_.array()*d->r.template tail<12>().array()).matrix() ; 
   
@@ -265,14 +265,14 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calcDiff(const boost::shared_ptr<
   Arr.diagonal() =  ((Fa_x_u - ub).array() >= Scalar(0.)).matrix().template cast<Scalar>() ; 
   for (int i=0; i<4; i=i+1){
     // r = friction_weight_*Arr.diagonal().segment(5*i,5) ; 
-    r[1] = friction_weight_*Arr.diagonal()[5*i] ;
-    r[2] = friction_weight_*Arr.diagonal()[5*i+1] ;
-    r[3] = friction_weight_*Arr.diagonal()[5*i+2] ;
-    r[4] = friction_weight_*Arr.diagonal()[5*i+3] ;
-    r[5] = friction_weight_*Arr.diagonal()[5*i+4] ;
-    d->Luu.block(3*i,3*i,3,3) << r[1] + r[2] , 0.0 , mu*(r[2] - r[1] ),
-                                  0.0,  r[3] + r[4] , mu*(r[4] - r[3] ), 
-                                mu*(r[2] - r[1] ) , mu*(r[4] - r[3]) , mu*mu*(r[1] + r[2] + r[3] + r[4]) + r[5]  ; 
+    r[0] = friction_weight_*Arr.diagonal()[5*i] ;
+    r[1] = friction_weight_*Arr.diagonal()[5*i+1] ;
+    r[2] = friction_weight_*Arr.diagonal()[5*i+2] ;
+    r[3] = friction_weight_*Arr.diagonal()[5*i+3] ;
+    r[4] = friction_weight_*Arr.diagonal()[5*i+4] ;
+    d->Luu.block(3*i,3*i,3,3) << r[0] + r[1] , 0.0 , mu*(r[1] - r[0] ),
+                                  0.0,  r[2] + r[3] , mu*(r[3] - r[2] ), 
+                                mu*(r[1] - r[0] ) , mu*(r[3] - r[2]) , mu*mu*(r[0] + r[1] + r[2] + r[3]) + r[4]  ; 
   }
   d->Luu.diagonal() = d->Luu.diagonal() + (force_weights_.array() * force_weights_.array()).matrix() ;
 
