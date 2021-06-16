@@ -17,7 +17,7 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
   typedef crocoddyl::ActionDataAbstractTpl<Scalar> ActionDataAbstract;
   typedef crocoddyl::ActionModelAbstractTpl<Scalar> Base;
   typedef crocoddyl::MathBaseTpl<Scalar> MathBase;
-  
+
   ActionModelQuadrupedNonLinearTpl();
   ~ActionModelQuadrupedNonLinearTpl();
 
@@ -64,22 +64,21 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
   const Scalar& get_shoulder_weight() const;
   void set_shoulder_weight(const Scalar& weight);
 
-  const bool& get_relative_forces() const ;
-  void set_relative_forces(const bool& rel_forces) ;
+  const bool& get_relative_forces() const;
+  void set_relative_forces(const bool& rel_forces);
 
-  const bool& get_implicit_integration() const ;
-  void set_implicit_integration(const bool& implicit) ;
+  const bool& get_implicit_integration() const;
+  void set_implicit_integration(const bool& implicit);
 
-
-  // Update the model depending if the foot in contact with the ground 
+  // Update the model depending if the foot in contact with the ground
   // or the new lever arms
-  void update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet  ,
+  void update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& S ) ;
+                    const Eigen::Ref<const typename MathBase::MatrixXs>& S);
 
-    // Get A & B matrix
-  const typename Eigen::Matrix<Scalar, 12, 12 >& get_A() const;
-  const typename Eigen::Matrix<Scalar, 12, 12 >& get_B() const;  
+  // Get A & B matrix
+  const typename Eigen::Matrix<Scalar, 12, 12>& get_A() const;
+  const typename Eigen::Matrix<Scalar, 12, 12>& get_B() const;
 
  protected:
   using Base::has_control_limits_;  //!< Indicates whether any of the control limits
@@ -89,57 +88,52 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
   using Base::u_lb_;                //!< Lower control limits
   using Base::u_ub_;                //!< Upper control limits
   using Base::unone_;               //!< Neutral state
- 
- 
+
  private:
   Scalar dt_;
-  Scalar mass ; 
-  Scalar mu ;
+  Scalar mass;
+  Scalar mu;
   Scalar friction_weight_;
-  Scalar min_fz_in_contact ; 
-  Scalar max_fz ; 
-  bool relative_forces ;
-  bool implicit_integration ;
+  Scalar min_fz_in_contact;
+  Scalar max_fz;
+  bool relative_forces;
+  bool implicit_integration;
 
-  typename Eigen::Matrix<Scalar, 12, 1 > uref_ ;
-
+  typename Eigen::Matrix<Scalar, 12, 1> uref_;
 
   typename Eigen::Matrix<Scalar, 12, 1> force_weights_;
   typename Eigen::Matrix<Scalar, 12, 1> state_weights_;
-  
-  
-  typename Eigen::Matrix<Scalar, 12, 12 > A;
-  typename Eigen::Matrix<Scalar, 12, 12 > B;
+
+  typename Eigen::Matrix<Scalar, 12, 12> A;
+  typename Eigen::Matrix<Scalar, 12, 12> B;
   typename Eigen::Matrix<Scalar, 12, 1> g;
-  typename Eigen::Matrix<Scalar, 3, 3> I_inv ; 
-  typename MathBase::Matrix3s R_tmp ;
-  typename Eigen::Matrix<Scalar, 3 , 3 > gI;
-  
+  typename Eigen::Matrix<Scalar, 3, 3> I_inv;
+  typename MathBase::Matrix3s R_tmp;
+  typename Eigen::Matrix<Scalar, 3, 3> gI;
+
   typename Eigen::Matrix<Scalar, 3, 4> lever_arms;
   typename MathBase::Vector3s lever_tmp;
-  typename MathBase::MatrixXs xref_;  
+  typename MathBase::MatrixXs xref_;
 
-  typename Eigen::Matrix<Scalar, 24, 1 > ub ; 
+  typename Eigen::Matrix<Scalar, 24, 1> ub;
 
-  typename Eigen::Matrix<Scalar, 24, 1 > Fa_x_u ; 
-  typename Eigen::Matrix<Scalar, 24, 1 > rub_max_ ; 
-  typename Eigen::Matrix<Scalar, 24, 24 > Arr ; 
-  typename Eigen::Matrix<Scalar, 6, 1 > r ; 
-  typename Eigen::Matrix<Scalar, 4, 1 > gait ; 
+  typename Eigen::Matrix<Scalar, 24, 1> Fa_x_u;
+  typename Eigen::Matrix<Scalar, 24, 1> rub_max_;
+  typename Eigen::Matrix<Scalar, 24, 24> Arr;
+  typename Eigen::Matrix<Scalar, 6, 1> r;
+  typename Eigen::Matrix<Scalar, 4, 1> gait;
 
-  typename Eigen::Matrix<Scalar, 3, 1 > base_vector_x ; 
-  typename Eigen::Matrix<Scalar, 3, 1 > base_vector_y ; 
-  typename Eigen::Matrix<Scalar, 3, 1 > base_vector_z ; 
-  typename Eigen::Matrix<Scalar, 3, 1 > forces_3d ; 
+  typename Eigen::Matrix<Scalar, 3, 1> base_vector_x;
+  typename Eigen::Matrix<Scalar, 3, 1> base_vector_y;
+  typename Eigen::Matrix<Scalar, 3, 1> base_vector_z;
+  typename Eigen::Matrix<Scalar, 3, 1> forces_3d;
 
   // Cost relative to the shoulder height
-  typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_0;  
-  typename Eigen::Matrix<Scalar, 3 , 4 > psh; 
-  typename Eigen::Matrix<Scalar, 4, 1 > sh_ub_max_ ; 
-  Scalar sh_weight ; 
-  Scalar sh_hlim ; 
-
-
+  typename Eigen::Matrix<Scalar, 2, 4> pshoulder_0;
+  typename Eigen::Matrix<Scalar, 3, 4> psh;
+  typename Eigen::Matrix<Scalar, 4, 1> sh_ub_max_;
+  Scalar sh_weight;
+  Scalar sh_hlim;
 };
 
 template <typename _Scalar>
@@ -161,10 +155,9 @@ struct ActionDataQuadrupedNonLinearTpl : public crocoddyl::ActionDataAbstractTpl
   using Base::xnext;
 
   template <template <typename Scalar> class Model>
-  explicit ActionDataQuadrupedNonLinearTpl(Model<Scalar>* const model) : crocoddyl::ActionDataAbstractTpl<Scalar>(model) {}
+  explicit ActionDataQuadrupedNonLinearTpl(Model<Scalar>* const model)
+      : crocoddyl::ActionDataAbstractTpl<Scalar>(model) {}
 };
-
-  
 
 /* --- Details -------------------------------------------------------------- */
 /* --- Details -------------------------------------------------------------- */
@@ -173,9 +166,8 @@ struct ActionDataQuadrupedNonLinearTpl : public crocoddyl::ActionDataAbstractTpl
 typedef ActionModelQuadrupedNonLinearTpl<double> ActionModelQuadrupedNonLinear;
 typedef ActionDataQuadrupedNonLinearTpl<double> ActionDataQuadrupedNonLinear;
 
-}
+}  // namespace quadruped_walkgen
 
 #include "quadruped_nl.hxx"
-
 
 #endif
