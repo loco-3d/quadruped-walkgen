@@ -52,6 +52,18 @@ void ActionModelQuadrupedStepTpl<Scalar>::calc(
   d->r.template segment<8>(12) = shoulder_weights_.cwiseProduct(x.tail(8) - pshoulder_);
   d->r.template tail<4>() = step_weights_.cwiseProduct(u);
 
+  /* std::cout << "B" << std::endl;
+  std::cout << B.transpose() << std::endl;
+  std::cout << "u" << std::endl;
+  std::cout << u.transpose() << std::endl;
+  std::cout << "x - xref" << std::endl;
+  std::cout << (x.head(12) - xref_).transpose() << std::endl;
+  std::cout << "r - psh" << std::endl;
+  std::cout << (x.tail(8) - pshoulder_).transpose() << std::endl;
+  std::cout << "x" << std::endl << x.transpose() << std::endl;
+  std::cout << "psh" << std::endl << pshoulder_.transpose() << std::endl;
+  std::cout << "wsh" << std::endl << shoulder_weights_ << std::endl; */
+
   d->cost = Scalar(0.5) * d->r.transpose() * d->r;
 }
 
@@ -202,7 +214,7 @@ void ActionModelQuadrupedStepTpl<Scalar>::update_model(const Eigen::Ref<const ty
 
   xref_ = xref;
 
-  R_tmp << cos(xref(5, 0)), -sin(xref(5, 0)), Scalar(0), sin(xref(5, 0)), cos(xref(5, 0)), Scalar(0), Scalar(0),
+  /* R_tmp << cos(xref(5, 0)), -sin(xref(5, 0)), Scalar(0), sin(xref(5, 0)), cos(xref(5, 0)), Scalar(0), Scalar(0),
       Scalar(0), Scalar(1.0);
 
   // Centrifual term
@@ -217,16 +229,26 @@ void ActionModelQuadrupedStepTpl<Scalar>::update_model(const Eigen::Ref<const ty
          centrifugal_term * pcentrifugal_tmp.block(0, 0, 2, 1));
     pshoulder_[2 * i] = pshoulder_tmp(0, i) + xref(0, 0);
     pshoulder_[2 * i + 1] = pshoulder_tmp(1, i) + xref(1, 0);
+  } */
+
+  for (int i = 0; i < 4; i = i + 1) {
+    pshoulder_[2 * i] = l_feet(0, i);
+    pshoulder_[2 * i + 1] = l_feet(1, i);
   }
+
+  /* std::cout << pshoulder_ << std::endl; */
 
   B.setZero();
 
   if (S(0, 0) == Scalar(1)) {
     B.block(0, 0, 2, 2).setIdentity();
     B.block(6, 2, 2, 2).setIdentity();
+    /* shoulder_weights_ << 100.0, 100.0, 0.0, 0.0, 0.0, 0.0, 100.0, 100.0; */
+
   } else {
     B.block(2, 0, 2, 2).setIdentity();
     B.block(4, 2, 2, 2).setIdentity();
+    /* shoulder_weights_ << 0.0, 0.0, 100.0, 100.0, 100.0, 100.0, 0.0, 0.0; */
   }
 }
 }  // namespace quadruped_walkgen
