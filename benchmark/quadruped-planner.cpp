@@ -142,13 +142,14 @@ int main(int argc, char* argv[]) {
         //Update model : 
         tmp = l_feet.array() ;
         if (int(gait.block(j,1,1,4).sum()) == 4 and gap == 1) {
-          model2->set_last_position_weights(Eigen::Matrix<double,8,1>::Constant(1)) ; 
+          model2->set_stop_weights(Eigen::Matrix<double,8,1>::Constant(1)) ; 
         }
         else{
-          model2->set_last_position_weights(Eigen::Matrix<double,8,1>::Zero()) ; 
+          model2->set_stop_weights(Eigen::Matrix<double,8,1>::Zero()) ; 
 
         }
         model2->update_model(Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4) ,
+                            Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4) ,
                             Eigen::Map<Eigen::Matrix<double,12,1> >(xref.block(0,k+1,12,1).data() ,12,1),
                             Eigen::Map<Eigen::Matrix<double,4,1> >(gait.block(j,1,1,4).data() ,4,1)) ;   
         us.push_back(u0)  ;
@@ -167,11 +168,12 @@ int main(int argc, char* argv[]) {
   gait_tmp = gait.block(max_index -1 ,1,1,4).array() ; 
 
   terminal_model_2->update_model(Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4) ,
+                          Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4) ,
                           Eigen::Map<Eigen::Matrix<double,12,1> >(xref.block(0,16,12,1).data() ,12,1),
                           Eigen::Map<Eigen::Matrix<double,4,1> >(gait_tmp.data() ,4,1)) ; 
   terminal_model_2->set_force_weights(Eigen::Matrix<double,12,1>::Zero()) ; 
   terminal_model_2->set_friction_weight(0) ; 
-  terminal_model_2->set_last_position_weights(Eigen::Matrix<double,8,1>::Zero()) ; 
+  terminal_model_2->set_stop_weights(Eigen::Matrix<double,8,1>::Zero()) ; 
 
 
 

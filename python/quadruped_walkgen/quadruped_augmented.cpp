@@ -42,7 +42,7 @@ void exposeActionQuadrupedAugmented() {
                                          const Eigen::Ref<const Eigen::VectorXd>&)>(
           "calcDiff", &ActionModelAbstract::calcDiff, bp::args("self", "data", "x"))
       .def("createData", &ActionModelQuadrupedAugmented::createData, bp::args("self"), "Create the quadruped action data.")
-      .def("updateModel", &ActionModelQuadrupedAugmented::update_model, bp::args("self" , "l_feet", "xref", "S"),
+      .def("updateModel", &ActionModelQuadrupedAugmented::update_model, bp::args("self" , "l_feet","l_stop", "xref", "S"),
        "Update the quadruped model depending on the position of the foot in the local frame\n\n"
        ":param l_feet : 3x4, Matrix representing the position of the foot in the local frame \n "
        "                Each colum represents the position of one foot : x,y,z"
@@ -56,14 +56,11 @@ void exposeActionQuadrupedAugmented() {
                     bp::make_function(&ActionModelQuadrupedAugmented::get_state_weights, bp::return_internal_reference<>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_state_weights), "Weights on the state vector")
       .add_property("heuristicWeights",
-                    bp::make_function(&ActionModelQuadrupedAugmented::get_shoulder_weights, bp::return_internal_reference<>()),
-                    bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_weights), "Weights on the heuristic term")
-      .add_property("shoulderPosition",
-                    bp::make_function(&ActionModelQuadrupedAugmented::get_shoulder_position, bp::return_internal_reference<>()),
-                    bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_position), "shoulderPosition position in local frame")
-      .add_property("lastPositionWeights",
-                    bp::make_function(&ActionModelQuadrupedAugmented::get_last_position_weights, bp::return_internal_reference<>()),
-                    bp::make_function(&ActionModelQuadrupedAugmented::set_last_position_weights), "Weights on the last position term")
+                    bp::make_function(&ActionModelQuadrupedAugmented::get_heuristic_weights, bp::return_internal_reference<>()),
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_heuristic_weights), "Weights on the heuristic term")
+      .add_property("stopWeights",
+                    bp::make_function(&ActionModelQuadrupedAugmented::get_stop_weights, bp::return_internal_reference<>()),
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_stop_weights), "Weights on the last position term")
       .add_property("frictionWeights", bp::make_function(&ActionModelQuadrupedAugmented::get_friction_weight, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_friction_weight) , "Weight on friction cone term")
       .add_property("mu", bp::make_function(&ActionModelQuadrupedAugmented::get_mu, bp::return_value_policy<bp::return_by_value>()),
@@ -84,8 +81,8 @@ void exposeActionQuadrupedAugmented() {
                      "get B matrix")
       .add_property("shoulder_hlim", bp::make_function(&ActionModelQuadrupedAugmented::get_shoulder_hlim, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_hlim) , "Shoulder height limit ")
-      .add_property("shoulderWeights", bp::make_function(&ActionModelQuadrupedAugmented::get_shoulder_weights, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_weights) , "shoulder Weights terms (array of size 8) ")
+      .add_property("shoulderContactWeight", bp::make_function(&ActionModelQuadrupedAugmented::get_shoulder_contact_weight, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_contact_weight) , "shoulder Weights terms (array of size 8) ")
       .add_property("symmetry_term", bp::make_function(&ActionModelQuadrupedAugmented::get_symmetry_term, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_symmetry_term) , "symmetry term for the foot position heuristic")
       .add_property("relative_forces", bp::make_function(&ActionModelQuadrupedAugmented::get_relative_forces, bp::return_value_policy<bp::return_by_value>()),

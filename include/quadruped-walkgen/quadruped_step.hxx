@@ -6,24 +6,28 @@
 namespace quadruped_walkgen {
 template <typename Scalar>
 ActionModelQuadrupedStepTpl<Scalar>::ActionModelQuadrupedStepTpl()
-    : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(20), 4, 24) {
+    : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(20), 8, 28) {
   B.setZero();
   state_weights_ << Scalar(1.), Scalar(1.), Scalar(150.), Scalar(35.), Scalar(30.), Scalar(8.), Scalar(20.),
       Scalar(20.), Scalar(15.), Scalar(4.), Scalar(4.), Scalar(8.);
-  shoulder_weights_.setConstant(Scalar(1));
-  pshoulder_ << Scalar(0.1946), Scalar(0.15005), Scalar(0.1946), Scalar(-0.15005), Scalar(-0.1946), Scalar(0.15005),
+  
+  pheuristic_ << Scalar(0.1946), Scalar(0.15005), Scalar(0.1946), Scalar(-0.15005), Scalar(-0.1946), Scalar(0.15005),
       Scalar(-0.1946), Scalar(-0.15005);
-  pshoulder_0 << Scalar(0.1946), Scalar(0.1946), Scalar(-0.1946), Scalar(-0.1946), Scalar(0.15005), Scalar(-0.15005),
-      Scalar(0.15005), Scalar(-0.15005);
-  pshoulder_tmp.setZero();
-  pcentrifugal_tmp_1.setZero();
-  pcentrifugal_tmp_2.setZero();
-  pcentrifugal_tmp.setZero();
+  
   centrifugal_term = true;
   symmetry_term = true;
   T_gait = Scalar(0.32);
 
   step_weights_.setConstant(Scalar(1));
+  heuristic_weights_.setConstant(Scalar(1));
+
+  // Compute heuristic inside
+  // pshoulder_0 << Scalar(0.1946), Scalar(0.1946), Scalar(-0.1946), Scalar(-0.1946), Scalar(0.15005), Scalar(-0.15005),
+  //     Scalar(0.15005), Scalar(-0.15005);
+  // pshoulder_tmp.setZero();
+  // pcentrifugal_tmp_1.setZero();
+  // pcentrifugal_tmp_2.setZero();
+  // pcentrifugal_tmp.setZero();
 }
 
 template <typename Scalar>
@@ -49,8 +53,8 @@ void ActionModelQuadrupedStepTpl<Scalar>::calc(
 
   // Residual cost on the state and force norm
   d->r.template head<12>() = state_weights_.cwiseProduct(x.head(12) - xref_);
-  d->r.template segment<8>(12) = shoulder_weights_.cwiseProduct(x.tail(8) - pshoulder_);
-  d->r.template tail<4>() = step_weights_.cwiseProduct(u);
+  d->r.template segment<8>(12) = heuristic_weights_.cwiseProduct(x.tail(8) - pheuristic_);
+  d->r.template tail<8>() = step_weights_.cwiseProduct(u);
 
   /* std::cout << "B" << std::endl;
   std::cout << B.transpose() << std::endl;
@@ -84,19 +88,19 @@ void ActionModelQuadrupedStepTpl<Scalar>::calcDiff(
 
   // Cost derivatives : Lx
   d->Lx.template head<12>() = (state_weights_.array() * d->r.template head<12>().array()).matrix();
-  d->Lx.template tail<8>() = (shoulder_weights_.array() * d->r.template segment<8>(12).array()).matrix();
+  d->Lx.template tail<8>() = (heuristic_weights_.array() * d->r.template segment<8>(12).array()).matrix();
 
-  d->Lu = (step_weights_.array() * d->r.template tail<4>().array()).matrix();
+  d->Lu = (step_weights_.array() * d->r.template tail<8>().array()).matrix();
 
   // Hessian : Lxx
   d->Lxx.diagonal().head(12) = (state_weights_.array() * state_weights_.array()).matrix();
-  d->Lxx.diagonal().tail(8) = (shoulder_weights_.array() * shoulder_weights_.array()).matrix();
+  d->Lxx.diagonal().tail(8) = (heuristic_weights_.array() * heuristic_weights_.array()).matrix();
 
   d->Luu.diagonal() = (step_weights_.array() * step_weights_.array()).matrix();
 
   // Dynamic derivatives
   d->Fx.setIdentity();
-  d->Fu.block(12, 0, 8, 4) = B;
+  d->Fu.block(12, 0, 8, 8) = B;
 }
 
 template <typename Scalar>
@@ -122,12 +126,12 @@ void ActionModelQuadrupedStepTpl<Scalar>::set_state_weights(const typename MathB
 }
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 4, 1>& ActionModelQuadrupedStepTpl<Scalar>::get_step_weights() const {
+const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedStepTpl<Scalar>::get_step_weights() const {
   return step_weights_;
 }
 template <typename Scalar>
 void ActionModelQuadrupedStepTpl<Scalar>::set_step_weights(const typename MathBase::VectorXs& weights) {
-  if (static_cast<std::size_t>(weights.size()) != 4) {
+  if (static_cast<std::size_t>(weights.size()) != 8) {
     throw_pretty("Invalid argument: "
                  << "Weights vector has wrong dimension (it should be 4)");
   }
@@ -135,29 +139,16 @@ void ActionModelQuadrupedStepTpl<Scalar>::set_step_weights(const typename MathBa
 }
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedStepTpl<Scalar>::get_shoulder_weights() const {
-  return shoulder_weights_;
+const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedStepTpl<Scalar>::get_heuristic_weights() const {
+  return heuristic_weights_;
 }
 template <typename Scalar>
-void ActionModelQuadrupedStepTpl<Scalar>::set_shoulder_weights(const typename MathBase::VectorXs& weights) {
+void ActionModelQuadrupedStepTpl<Scalar>::set_heuristic_weights(const typename MathBase::VectorXs& weights) {
   if (static_cast<std::size_t>(weights.size()) != 8) {
     throw_pretty("Invalid argument: "
                  << "Weights vector has wrong dimension (it should be 8)");
   }
-  shoulder_weights_ = weights;
-}
-
-template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedStepTpl<Scalar>::get_shoulder_position() const {
-  return pshoulder_;
-}
-template <typename Scalar>
-void ActionModelQuadrupedStepTpl<Scalar>::set_shoulder_position(const typename MathBase::VectorXs& pos) {
-  if (static_cast<std::size_t>(pos.size()) != 8) {
-    throw_pretty("Invalid argument: "
-                 << "Weights vector has wrong dimension (it should be 8)");
-  }
-  pshoulder_ = pos;
+  heuristic_weights_ = weights;
 }
 
 template <typename Scalar>
@@ -198,7 +189,7 @@ void ActionModelQuadrupedStepTpl<Scalar>::set_T_gait(const Scalar& T_gait_) {
 template <typename Scalar>
 void ActionModelQuadrupedStepTpl<Scalar>::update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet,
                                                        const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
-                                                       const Eigen::Ref<const typename MathBase::MatrixXs>& S) {
+                                                       const Eigen::Ref<const typename MathBase::VectorXs>& S) {
   if (static_cast<std::size_t>(l_feet.size()) != 12) {
     throw_pretty("Invalid argument: "
                  << "l_feet matrix has wrong dimension (it should be : 3x4)");
@@ -232,23 +223,25 @@ void ActionModelQuadrupedStepTpl<Scalar>::update_model(const Eigen::Ref<const ty
   } */
 
   for (int i = 0; i < 4; i = i + 1) {
-    pshoulder_[2 * i] = l_feet(0, i);
-    pshoulder_[2 * i + 1] = l_feet(1, i);
+    pheuristic_[2 * i] = l_feet(0, i);
+    pheuristic_[2 * i + 1] = l_feet(1, i);
   }
 
   /* std::cout << pshoulder_ << std::endl; */
 
   B.setZero();
 
-  if (S(0, 0) == Scalar(1)) {
-    B.block(0, 0, 2, 2).setIdentity();
-    B.block(6, 2, 2, 2).setIdentity();
-    /* shoulder_weights_ << 100.0, 100.0, 0.0, 0.0, 0.0, 0.0, 100.0, 100.0; */
-
-  } else {
-    B.block(2, 0, 2, 2).setIdentity();
-    B.block(4, 2, 2, 2).setIdentity();
-    /* shoulder_weights_ << 0.0, 0.0, 100.0, 100.0, 100.0, 100.0, 0.0, 0.0; */
+  if (S[0] == Scalar(1)) {
+    B.block(0, 0, 2, 2).setIdentity();    
+  }
+  if (S[1] == Scalar(1)) {
+    B.block(2, 2, 2, 2).setIdentity();    
+  }
+  if (S[2] == Scalar(1)) {
+    B.block(4, 4, 2, 2).setIdentity();    
+  }
+  if (S[3] == Scalar(1)) {
+    B.block(6, 6, 2, 2).setIdentity();    
   }
 }
 }  // namespace quadruped_walkgen
