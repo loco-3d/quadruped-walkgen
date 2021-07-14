@@ -53,8 +53,8 @@ void exposeActionQuadrupedStep() {
                     bp::make_function(&ActionModelQuadrupedStep::get_state_weights, bp::return_internal_reference<>()),
                     bp::make_function(&ActionModelQuadrupedStep::set_state_weights), "Weights on the state vector")
       .add_property("heuristicWeights",
-                    bp::make_function(&ActionModelQuadrupedStep::get_shoulder_weights, bp::return_internal_reference<>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_shoulder_weights), "Weights on the shoulder term")
+                    bp::make_function(&ActionModelQuadrupedStep::get_heuristic_weights, bp::return_internal_reference<>()),
+                    bp::make_function(&ActionModelQuadrupedStep::set_heuristic_weights), "Weights on the heuristic term")
       .add_property("stepWeights",
                     bp::make_function(&ActionModelQuadrupedStep::get_step_weights, bp::return_internal_reference<>()),
                     bp::make_function(&ActionModelQuadrupedStep::set_step_weights), "Weights on the command norm")    

@@ -8,7 +8,7 @@ template <typename Scalar>
 ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl()
     : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(20), 12, 32) {
   // Relative forces to compute the norm mof the command
-  relative_forces = false;
+  relative_forces = true;
   uref_.setZero();
 
   // Model parameters
@@ -33,16 +33,16 @@ ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl()
   state_weights_ << Scalar(1.), Scalar(1.), Scalar(150.), Scalar(35.), Scalar(30.), Scalar(8.), Scalar(20.),
       Scalar(20.), Scalar(15.), Scalar(4.), Scalar(4.), Scalar(8.);
   friction_weight_ = Scalar(10);
-  shoulder_weights_.setConstant(Scalar(1));
-  last_position_weights_.setConstant(Scalar(1));
-  pshoulder_ << Scalar(0.1946), Scalar(0.15005), Scalar(0.1946), Scalar(-0.15005), Scalar(-0.1946), Scalar(0.15005),
-      Scalar(-0.1946), Scalar(-0.15005);
+  heuristic_weights_.setConstant(Scalar(1));
+  stop_weights_.setConstant(Scalar(1));
+  // pshoulder_ << Scalar(0.1946), Scalar(0.15005), Scalar(0.1946), Scalar(-0.15005), Scalar(-0.1946), Scalar(0.15005),
+  //     Scalar(-0.1946), Scalar(-0.15005);
   pshoulder_0 << Scalar(0.1946), Scalar(0.1946), Scalar(-0.1946), Scalar(-0.1946), Scalar(0.15005), Scalar(-0.15005),
       Scalar(0.15005), Scalar(-0.15005);
-  pshoulder_tmp.setZero();
-  pcentrifugal_tmp_1.setZero();
-  pcentrifugal_tmp_2.setZero();
-  pcentrifugal_tmp.setZero();
+  // pshoulder_tmp.setZero();
+  // pcentrifugal_tmp_1.setZero();
+  // pcentrifugal_tmp_2.setZero();
+  // pcentrifugal_tmp.setZero();
   // UpperBound vector
   ub.setZero();
 
@@ -73,6 +73,7 @@ ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl()
   sh_weight = Scalar(10.);
   sh_ub_max_.setZero();
   psh.setZero();
+  pheuristic_.setZero();
 }
 
 template <typename Scalar>
@@ -123,7 +124,7 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calc(
   // Residual cost on the state and force norm
   d->r.template head<12>() = state_weights_.cwiseProduct(x.head(12) - xref_);
   d->r.template segment<8>(12) =
-      ((shoulder_weights_.cwiseProduct(x.tail(8) - pshoulder_)).array() * gait_double.array()).matrix();
+      ((heuristic_weights_.cwiseProduct(x.tail(8) - pheuristic_)).array() * gait_double.array()).matrix();
   d->r.template tail<12>() = force_weights_.cwiseProduct(u - uref_);
 
   // Friction cone
@@ -142,11 +143,11 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calc(
 
   // Cost computation
   // d->cost = Scalar(0.5) * d->r.transpose() * d->r     + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm()
-  //         + Scalar(0.5)*( (last_position_weights_.cwiseProduct(x.tail(8) - pref_) ).array() * gait_double.array()
+  //         + Scalar(0.5)*( (stop_weights_.cwiseProduct(x.tail(8) - pref_) ).array() * gait_double.array()
   //         ).matrix().squaredNorm()  ;
 
   d->cost = Scalar(0.5) * d->r.transpose() * d->r + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm() +
-            Scalar(0.5) * ((last_position_weights_.cwiseProduct(x.tail(8) - pref_)).array() * gait_double.array())
+            Scalar(0.5) * ((stop_weights_.cwiseProduct(x.tail(8) - pstop_)).array() * gait_double.array())
                               .matrix()
                               .squaredNorm() +
             sh_weight * Scalar(0.5) * sh_ub_max_.sum();
@@ -170,9 +171,9 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calcDiff(
   // Cost derivatives : Lx
   d->Lx.setZero();
   d->Lx.template head<12>() = (state_weights_.array() * d->r.template head<12>().array()).matrix();
-  d->Lx.template tail<8>() = (shoulder_weights_.array() * d->r.template segment<8>(12).array()).matrix() +
-                             ((last_position_weights_.cwiseProduct(x.tail(8) - pref_)).array() * gait_double.array() *
-                              last_position_weights_.array())
+  d->Lx.template tail<8>() = (heuristic_weights_.array() * d->r.template segment<8>(12).array()).matrix() +
+                             ((stop_weights_.cwiseProduct(x.tail(8) - pstop_)).array() * gait_double.array() *
+                              stop_weights_.array())
                                  .matrix();
 
   // Cost derivative : Lu
@@ -192,9 +193,9 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calcDiff(
   d->Lxx.setZero();
 
   d->Lxx.diagonal().head(12) = (state_weights_.array() * state_weights_.array()).matrix();
-  d->Lxx.diagonal().tail(8) = (gait_double.array() * shoulder_weights_.array() * shoulder_weights_.array()).matrix();
+  d->Lxx.diagonal().tail(8) = (gait_double.array() * heuristic_weights_.array() * heuristic_weights_.array()).matrix();
   d->Lxx.diagonal().tail(8) +=
-      (gait_double.array() * last_position_weights_.array() * last_position_weights_.array()).matrix();
+      (gait_double.array() * stop_weights_.array() * stop_weights_.array()).matrix();
 
   // Shoulder height derivative cost
   for (int j = 0; j < 4; j = j + 1) {
@@ -318,43 +319,30 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::set_state_weights(const typename 
 }
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedAugmentedTpl<Scalar>::get_shoulder_weights() const {
-  return shoulder_weights_;
+const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedAugmentedTpl<Scalar>::get_heuristic_weights() const {
+  return heuristic_weights_;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTpl<Scalar>::set_shoulder_weights(const typename MathBase::VectorXs& weights) {
+void ActionModelQuadrupedAugmentedTpl<Scalar>::set_heuristic_weights(const typename MathBase::VectorXs& weights) {
   if (static_cast<std::size_t>(weights.size()) != 8) {
     throw_pretty("Invalid argument: "
                  << "Weights vector has wrong dimension (it should be 8)");
   }
-  shoulder_weights_ = weights;
+  heuristic_weights_ = weights;
 }
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedAugmentedTpl<Scalar>::get_shoulder_position() const {
-  return pshoulder_;
-}
-template <typename Scalar>
-void ActionModelQuadrupedAugmentedTpl<Scalar>::set_shoulder_position(const typename MathBase::VectorXs& pos) {
-  if (static_cast<std::size_t>(pos.size()) != 8) {
-    throw_pretty("Invalid argument: "
-                 << "Weights vector has wrong dimension (it should be 8)");
-  }
-  pshoulder_ = pos;
-}
-
-template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedAugmentedTpl<Scalar>::get_last_position_weights()
+const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedAugmentedTpl<Scalar>::get_stop_weights()
     const {
-  return last_position_weights_;
+  return stop_weights_;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTpl<Scalar>::set_last_position_weights(const typename MathBase::VectorXs& weights) {
+void ActionModelQuadrupedAugmentedTpl<Scalar>::set_stop_weights(const typename MathBase::VectorXs& weights) {
   if (static_cast<std::size_t>(weights.size()) != 8) {
     throw_pretty("Invalid argument: "
                  << "Weights vector has wrong dimension (it should be 8)");
   }
-  last_position_weights_ = weights;
+  stop_weights_ = weights;
 }
 
 template <typename Scalar>
@@ -464,11 +452,11 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::set_shoulder_hlim(const Scalar& h
 }
 
 template <typename Scalar>
-const Scalar& ActionModelQuadrupedAugmentedTpl<Scalar>::get_shoulder_weight() const {
+const Scalar& ActionModelQuadrupedAugmentedTpl<Scalar>::get_shoulder_contact_weight() const {
   return sh_weight;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTpl<Scalar>::set_shoulder_weight(const Scalar& weight) {
+void ActionModelQuadrupedAugmentedTpl<Scalar>::set_shoulder_contact_weight(const Scalar& weight) {
   // The model need to be updated after this changed
   sh_weight = weight;
 }
@@ -511,6 +499,7 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::set_relative_forces(const bool& r
 template <typename Scalar>
 void ActionModelQuadrupedAugmentedTpl<Scalar>::update_model(
     const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet,
+    const Eigen::Ref<const typename MathBase::MatrixXs>& l_stop,
     const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
     const Eigen::Ref<const typename MathBase::MatrixXs>& S) {
   if (static_cast<std::size_t>(l_feet.size()) != 12) {
@@ -542,29 +531,30 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::update_model(
     gait_double(2 * i, 0) = gait(i, 0);
     gait_double(2 * i + 1, 0) = gait(i, 0);
 
-    pref_.block(2 * i, 0, 2, 1) = l_feet.block(0, i, 2, 1);
+    pheuristic_.block(2 * i, 0, 2, 1) = l_feet.block(0, i, 2, 1);
+    pstop_.block(2 * i, 0, 2, 1) = l_stop.block(0, i, 2, 1);
   }
 
   R_tmp << cos(xref(5, 0)), -sin(xref(5, 0)), Scalar(0), sin(xref(5, 0)), cos(xref(5, 0)), Scalar(0), Scalar(0),
       Scalar(0), Scalar(1.0);
 
   // Centrifual term
-  pcentrifugal_tmp_1 = xref.block(6, 0, 3, 1);
-  pcentrifugal_tmp_2 = xref.block(9, 0, 3, 1);
-  pcentrifugal_tmp = 0.5 * std::sqrt(xref(2, 0) / 9.81) * pcentrifugal_tmp_1.cross(pcentrifugal_tmp_2);
+  // pcentrifugal_tmp_1 = xref.block(6, 0, 3, 1);
+  // pcentrifugal_tmp_2 = xref.block(9, 0, 3, 1);
+  // pcentrifugal_tmp = 0.5 * std::sqrt(xref(2, 0) / 9.81) * pcentrifugal_tmp_1.cross(pcentrifugal_tmp_2);
 
-  for (int i = 0; i < 4; i = i + 1) {
-    pshoulder_tmp.block(0, i, 2, 1) =
-        R_tmp.block(0, 0, 2, 2) *
-        (pshoulder_0.block(0, i, 2, 1) + symmetry_term * 0.25 * T_gait * xref.block(6, 0, 2, 1) +
-         centrifugal_term * pcentrifugal_tmp.block(0, 0, 2, 1));
-  }
+  // for (int i = 0; i < 4; i = i + 1) {
+  //   pshoulder_tmp.block(0, i, 2, 1) =
+  //       R_tmp.block(0, 0, 2, 2) *
+  //       (pshoulder_0.block(0, i, 2, 1) + symmetry_term * 0.25 * T_gait * xref.block(6, 0, 2, 1) +
+  //        centrifugal_term * pcentrifugal_tmp.block(0, 0, 2, 1));
+  // }
 
   R = (R_tmp * gI).inverse();  // I_inv
 
   for (int i = 0; i < 4; i = i + 1) {
-    pshoulder_[2 * i] = pshoulder_tmp(0, i) + xref(0, 0);
-    pshoulder_[2 * i + 1] = pshoulder_tmp(1, i) + xref(1, 0);
+    // pshoulder_[2 * i] = pshoulder_tmp(0, i) + xref(0, 0);
+    // pshoulder_[2 * i + 1] = pshoulder_tmp(1, i) + xref(1, 0);
 
     if (S(i, 0) != 0) {
       // set limit for normal force, (foot in contact with the ground)
