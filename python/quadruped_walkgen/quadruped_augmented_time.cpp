@@ -56,14 +56,11 @@ void exposeActionQuadrupedAugmentedTime() {
                     bp::make_function(&ActionModelQuadrupedAugmentedTime::get_state_weights, bp::return_internal_reference<>()),
                     bp::make_function(&ActionModelQuadrupedAugmentedTime::set_state_weights), "Weights on the state vector")
       .add_property("heuristicWeights",
-                    bp::make_function(&ActionModelQuadrupedAugmentedTime::get_shoulder_weights, bp::return_internal_reference<>()),
-                    bp::make_function(&ActionModelQuadrupedAugmentedTime::set_shoulder_weights), "Weights on the heuristic position of the feet")
-      .add_property("shoulderPosition",
-                    bp::make_function(&ActionModelQuadrupedAugmentedTime::get_shoulder_position, bp::return_internal_reference<>()),
-                    bp::make_function(&ActionModelQuadrupedAugmentedTime::set_shoulder_position), "shoulderPosition position in local frame")
-      .add_property("lastPositionWeights",
-                    bp::make_function(&ActionModelQuadrupedAugmentedTime::get_last_position_weights, bp::return_internal_reference<>()),
-                    bp::make_function(&ActionModelQuadrupedAugmentedTime::set_last_position_weights), "Weights on the last position term")
+                    bp::make_function(&ActionModelQuadrupedAugmentedTime::get_heuristic_weights, bp::return_internal_reference<>()),
+                    bp::make_function(&ActionModelQuadrupedAugmentedTime::set_heuristic_weights), "Weights on the heuristic position of the feet")
+      .add_property("stopWeights",
+                    bp::make_function(&ActionModelQuadrupedAugmentedTime::get_stop_weights, bp::return_internal_reference<>()),
+                    bp::make_function(&ActionModelQuadrupedAugmentedTime::set_stop_weights), "Weights on the last position term")
       .add_property("frictionWeights", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_friction_weight, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmentedTime::set_friction_weight) , "Weight on friction cone term")
       .add_property("mu", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_mu, bp::return_value_policy<bp::return_by_value>()),
@@ -91,8 +88,8 @@ void exposeActionQuadrupedAugmentedTime() {
                      "get log cost")
       .add_property("shoulder_hlim", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_shoulder_hlim, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmentedTime::set_shoulder_hlim) , "Shoulder height limit ")
-      .add_property("shoulderWeights", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_shoulder_weight, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedAugmentedTime::set_shoulder_weight) , "shoulder Weight term (scalar) ")
+      .add_property("shoulderContactWeight", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_shoulder_contact_weight, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmentedTime::set_shoulder_contact_weight) , "shoulder Weight term (scalar) ")
       .add_property("relative_forces", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_relative_forces, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmentedTime::set_relative_forces) , "relative norm ")
       .add_property("symmetry_term", bp::make_function(&ActionModelQuadrupedAugmentedTime::get_symmetry_term, bp::return_value_policy<bp::return_by_value>()),

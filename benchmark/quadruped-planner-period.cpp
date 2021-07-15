@@ -142,6 +142,8 @@ int main(int argc, char* argv[]) {
           tmp = l_feet.array() ; 
           S_tmp = gait.block(j,1,1,4) - gait.block(j - 1 ,1,1,4) ; 
           model3->update_model(Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4) ,
+                            Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4),
+                            Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4),
                             Eigen::Map<Eigen::Matrix<double,12,1> >(xref.block(0,k,12,1).data() ,12,1),
                             Eigen::Map<Eigen::Matrix<double,4,1> >(S_tmp.data() ,4,1)) ;   
        
@@ -156,7 +158,7 @@ int main(int argc, char* argv[]) {
 
           tmp = l_feet.array() ; 
           S_tmp = gait.block(j,1,1,4) - gait.block(j - 1 ,1,1,4) ; 
-          model1->update_model(Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4) ,
+          model1->update_model(Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4),
                             Eigen::Map<Eigen::Matrix<double,12,1> >(xref.block(0,k,12,1).data() ,12,1),
                             Eigen::Map<Eigen::Matrix<double,4,1> >(S_tmp.data() ,4,1)) ;   
        
@@ -184,7 +186,8 @@ int main(int argc, char* argv[]) {
         //   model2->set_last_position_weights(Eigen::Matrix<double,8,1>::Zero()) ; 
 
         // }
-        model2->update_model(Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4) ,
+        model2->update_model(Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4),
+                            Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4),
                             Eigen::Map<Eigen::Matrix<double,12,1> >(xref.block(0,k+1,12,1).data() ,12,1),
                             Eigen::Map<Eigen::Matrix<double,4,1> >(gait.block(j,1,1,4).data() ,4,1)) ;   
         us.push_back(u0)  ;
@@ -205,7 +208,8 @@ int main(int argc, char* argv[]) {
   Eigen::Array<double,1,4> gait_tmp = Eigen::Array<double,1,4>::Zero() ; 
   gait_tmp = gait.block(max_index -1 ,1,1,4).array() ; 
 
-  terminal_model_2->update_model(Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4) ,
+  terminal_model_2->update_model(Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4),
+                          Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4),
                           Eigen::Map<Eigen::Matrix<double,12,1> >(xref.block(0,16,12,1).data() ,12,1),
                           Eigen::Map<Eigen::Matrix<double,4,1> >(gait_tmp.data() ,4,1)) ; 
   terminal_model_2->set_force_weights(Eigen::Matrix<double,12,1>::Zero()) ; 

@@ -39,15 +39,13 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
   const typename Eigen::Matrix<Scalar, 8, 1>& get_heuristic_weights() const;
   void set_heuristic_weights(const typename MathBase::VectorXs& weights);
 
-  const typename Eigen::Matrix<Scalar, 8, 1>& get_shoulder_position() const;
-  void set_shoulder_position(const typename MathBase::VectorXs& weights);
-
-
   // Update the model depending if the foot in contact with the ground 
   // or the new lever arms
-  void update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet  ,
+  void update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet,
+                    const Eigen::Ref<const typename MathBase::MatrixXs>& velocity,
+                    const Eigen::Ref<const typename MathBase::MatrixXs>& acceleration,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& S ) ;
+                    const Eigen::Ref<const typename MathBase::VectorXs>& S ) ;
 
   const bool& get_symmetry_term() const ;
   void set_symmetry_term(const bool& sym_term) ;
@@ -89,6 +87,7 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
   Scalar nb_nodes ; 
   Scalar vlim ; 
   Scalar beta_lim ;
+  int nb_alpha_;
   bool centrifugal_term ; 
   bool symmetry_term ; 
   // indicates whether it t the 1st step, otherwise the cost function is much simpler (acc, speed = 0)
@@ -99,27 +98,43 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
   typename Eigen::Matrix<Scalar, 8, 1> heuristicWeights;
   typename MathBase::Matrix3s R_tmp ;
 
-  typename  Eigen::Array<Scalar, 3, 1 > alpha ; 
-  typename  Eigen::Array<Scalar, 3, 4 > alpha2 ; 
-  typename  Eigen::Array<Scalar, 3, 3 > b_coeff ; 
-  typename  Eigen::Array<Scalar, 3, 12 > b_coeff2 ; 
+  // typename  Eigen::Array<Scalar, 3, 1 > alpha ; 
+  // typename  Eigen::Array<Scalar, 3, 4 > alpha2 ; 
+  // typename  Eigen::Array<Scalar, 3, 3 > b_coeff ; 
+  typename MathBase::ArrayXs alpha; 
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> alpha2; 
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff; 
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff_x0;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff_y0;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff_x1;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff_y1;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff_x2;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff_y2;
+  
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_x ; 
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_y ; 
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_2 ;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_bool ; 
+
+  // typename  Eigen::Array<Scalar, 3, 12 > b_coeff2 ; 
   typename  Eigen::Matrix<Scalar, 3, 4> lfeet ;
-  typename Eigen::Array<Scalar, 3, 4 > rub_max_first ; 
-  typename Eigen::Array<Scalar, 3, 2 > rub_max_first_2 ;
-  typename Eigen::Array<Scalar, 3, 2 > rub_max_bool_first ; 
+  // typename Eigen::Array<Scalar, 3, 4 > rub_max_first ; 
+  // typename Eigen::Array<Scalar, 3, 2 > rub_max_first_2 ;
+  // typename Eigen::Array<Scalar, 3, 2 > rub_max_bool_first ; 
   
   
-  typename Eigen::Matrix<Scalar, 8, 4 > B;
+  typename Eigen::Matrix<Scalar, 8, 8 > B;
 
   typename MathBase::MatrixXs xref_;  
+  typename MathBase::VectorXs S_; // Containing the flying feet
+  typename Eigen::Matrix<Scalar, 8 , 1 > pheuristic_;  
 
-  typename Eigen::Matrix<Scalar, 8 , 1 > pshoulder_;  
-  typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_0;  
-  typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_tmp;  
-
-  typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp; 
-  typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_1; 
-  typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_2; 
+  // Compute heuristic inside update Model
+  // typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_0;  
+  // typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_tmp;  
+  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp; 
+  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_1; 
+  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_2; 
 
   typename Eigen::Matrix<Scalar, 4, 1 > rub_max_ ; 
   typename Eigen::Matrix<Scalar, 4, 1 > rub_max_bool ; 

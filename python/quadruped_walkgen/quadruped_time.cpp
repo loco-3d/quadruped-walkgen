@@ -53,8 +53,8 @@ void exposeActionQuadrupedTime() {
                     bp::make_function(&ActionModelQuadrupedTime::get_state_weights, bp::return_internal_reference<>()),
                     bp::make_function(&ActionModelQuadrupedTime::set_state_weights), "Weights on the state vector")
       .add_property("heuristicWeights",
-                    bp::make_function(&ActionModelQuadrupedTime::get_shoulder_weights, bp::return_internal_reference<>()),
-                    bp::make_function(&ActionModelQuadrupedTime::set_shoulder_weights), "Weights on the heuristic position of the shoulder term to lead the optimisation")
+                    bp::make_function(&ActionModelQuadrupedTime::get_heuristic_weights, bp::return_internal_reference<>()),
+                    bp::make_function(&ActionModelQuadrupedTime::set_heuristic_weights), "Weights on the heuristic position of the shoulder term to lead the optimisation")
       .add_property("symmetry_term", bp::make_function(&ActionModelQuadrupedTime::get_symmetry_term, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedTime::set_symmetry_term) , "symmetry term for the foot position heuristic")
       .add_property("centrifugal_term", bp::make_function(&ActionModelQuadrupedTime::get_centrifugal_term, bp::return_value_policy<bp::return_by_value>()),

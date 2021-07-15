@@ -42,7 +42,7 @@ void exposeActionQuadrupedStepTime() {
                                          const Eigen::Ref<const Eigen::VectorXd>&)>(
           "calcDiff", &ActionModelAbstract::calcDiff, bp::args("self", "data", "x"))
       .def("createData", &ActionModelQuadrupedStepTime::createData, bp::args("self"), "Create the quadruped action data.")
-      .def("updateModel", &ActionModelQuadrupedStepTime::update_model, bp::args("self" , "l_feet", "xref", "S"),
+      .def("updateModel", &ActionModelQuadrupedStepTime::update_model, bp::args("self" , "l_feet", "velocity", "acceleration", "xref", "S"),
        "Update the quadruped model depending on the position of the foot in the local frame\n\n"
        ":param l_feet : 3x4, Matrix representing the position of the foot in the local frame \n "
        "                Each colum represents the position of one foot : x,y,z"
