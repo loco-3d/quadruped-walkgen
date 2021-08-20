@@ -134,6 +134,7 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
   typename Eigen::Matrix<Scalar, 4, 1> sh_ub_max_;
   Scalar sh_weight;
   Scalar sh_hlim;
+  Scalar offset_com;
 };
 
 template <typename _Scalar>

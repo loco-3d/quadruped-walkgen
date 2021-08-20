@@ -65,6 +65,7 @@ ActionModelQuadrupedNonLinearTpl<Scalar>::ActionModelQuadrupedNonLinearTpl()
   // Implicit integration
   // V+ = V + dt*B*u   ; P+ = P + dt*V+ != explicit : P+ = P + dt*V
   implicit_integration = true;
+  offset_com = Scalar(-0.03);
 }
 
 template <typename Scalar>
@@ -95,7 +96,7 @@ void ActionModelQuadrupedNonLinearTpl<Scalar>::calc(
       // Compute pdistance of the shoulder wrt contact point
       psh.block(0, i, 3, 1) << x[0] + pshoulder_0(0, i) - pshoulder_0(1, i) * x[5] - lever_arms(0, i),
           x[1] + pshoulder_0(1, i) + pshoulder_0(0, i) * x[5] - lever_arms(1, i),
-          x[2] + pshoulder_0(1, i) * x[3] - pshoulder_0(0, i) * x[4];
+          x[2] - offset_com + pshoulder_0(1, i) * x[3] - pshoulder_0(0, i) * x[4];
     } else {
       // Compute pdistance of the shoulder wrt contact point
       psh.block(0, i, 3, 1).setZero();

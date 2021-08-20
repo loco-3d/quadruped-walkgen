@@ -37,8 +37,8 @@ ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl()
   stop_weights_.setConstant(Scalar(1));
   // pshoulder_ << Scalar(0.1946), Scalar(0.15005), Scalar(0.1946), Scalar(-0.15005), Scalar(-0.1946), Scalar(0.15005),
   //     Scalar(-0.1946), Scalar(-0.15005);
-  pshoulder_0 << Scalar(0.1946), Scalar(0.1946), Scalar(-0.1946), Scalar(-0.1946), Scalar(0.15005), Scalar(-0.15005),
-      Scalar(0.15005), Scalar(-0.15005);
+  pshoulder_0 << Scalar(0.1946), Scalar(0.1946), Scalar(-0.1946), Scalar(-0.1946), Scalar(0.14695), Scalar(-0.14695),
+      Scalar(0.14695), Scalar(-0.14695);
   // pshoulder_tmp.setZero();
   // pcentrifugal_tmp_1.setZero();
   // pcentrifugal_tmp_2.setZero();
@@ -74,6 +74,8 @@ ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl()
   sh_ub_max_.setZero();
   psh.setZero();
   pheuristic_.setZero();
+  offset_com = Scalar(-0.03); // z offset
+
 }
 
 template <typename Scalar>
@@ -107,7 +109,7 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calc(
       // Compute pdistance of the shoulder wrt contact point
       psh.block(0, i, 3, 1) << x(0) + pshoulder_0(0, i) - pshoulder_0(1, i) * x(5) - x(12 + 2 * i),
           x(1) + pshoulder_0(1, i) + pshoulder_0(0, i) * x(5) - x(12 + 2 * i + 1),
-          x(2) + pshoulder_0(1, i) * x(3) - pshoulder_0(0, i) * x(4);
+          x(2) - offset_com + pshoulder_0(1, i) * x(3) - pshoulder_0(0, i) * x(4);
     } else {
       // Compute pdistance of the shoulder wrt contact point
       psh.block(0, i, 3, 1).setZero();
@@ -550,7 +552,7 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::update_model(
   //        centrifugal_term * pcentrifugal_tmp.block(0, 0, 2, 1));
   // }
 
-  R = (R_tmp * gI).inverse();  // I_inv
+  R = (R_tmp.transpose() * gI * R_tmp).inverse();  // I_inv
 
   for (int i = 0; i < 4; i = i + 1) {
     // pshoulder_[2 * i] = pshoulder_tmp(0, i) + xref(0, 0);
