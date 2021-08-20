@@ -17,21 +17,24 @@ ActionModelQuadrupedTimeTpl<Scalar>::ActionModelQuadrupedTimeTpl()
   heuristic_weights_.setConstant(Scalar(1)) ; 
 
   dt_bound_weight_cmd = Scalar(100.) ;
-  dt_weight_command = Scalar(0.) ;
+  dt_weight_cmd = Scalar(0.) ;
+
+  pheuristic_.setZero();
+  gait_double_.setZero();
 
   // Shoulder heuristic position
-  pshoulder_ <<  Scalar(0.1946) ,  Scalar(0.15005),  Scalar(0.1946) ,  Scalar(-0.15005) ,
-                 Scalar(-0.1946),  Scalar(0.15005) , Scalar(-0.1946),  Scalar(-0.15005) ; 
-  pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),  Scalar(-0.1946) , 
-                  Scalar(0.15005) ,  Scalar(-0.15005)  , Scalar(0.15005)  ,  Scalar(-0.15005) ; 
-  pshoulder_tmp.setZero() ; 
-  pcentrifugal_tmp_1.setZero() ; 
-  pcentrifugal_tmp_2.setZero() ; 
-  pcentrifugal_tmp.setZero() ; 
+  // pshoulder_ <<  Scalar(0.1946) ,  Scalar(0.15005),  Scalar(0.1946) ,  Scalar(-0.15005) ,
+  //                Scalar(-0.1946),  Scalar(0.15005) , Scalar(-0.1946),  Scalar(-0.15005) ; 
+  // pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),  Scalar(-0.1946) , 
+  //                 Scalar(0.15005) ,  Scalar(-0.15005)  , Scalar(0.15005)  ,  Scalar(-0.15005) ; 
+  // pshoulder_tmp.setZero() ; 
+  // pcentrifugal_tmp_1.setZero() ; 
+  // pcentrifugal_tmp_2.setZero() ; 
+  // pcentrifugal_tmp.setZero() ; 
   centrifugal_term = true ; 
   symmetry_term = true ; 
   T_gait = Scalar(0.64) ; 
-  R_tmp.setZero() ; 
+  // R_tmp.setZero() ; 
 
   // Cost relative to the command
   rub_max_.setZero() ; 
@@ -75,9 +78,9 @@ void ActionModelQuadrupedTimeTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl
   // State : delta*||X-Xref||
   d->r.template head<12>() =  state_weights_.cwiseProduct(x.head(12) - xref_);
   // Feet placement : delta*||P-Pref||
-  d->r.template segment<8>(12) = heuristic_weights_.cwiseProduct(x.segment(12,8) - pshoulder_); 
+  d->r.template segment<8>(12) = ((heuristic_weights_.cwiseProduct(x.segment(12,8) - pheuristic_)).array() * gait_double_.array() ).matrix(); 
   // Dt command, used to fix the optimisation to dt_ref_
-  d->r.template tail<1>() <<  dt_weight_command*(u.cwiseAbs() - dt_ref_) ;
+  d->r.template tail<1>() <<  dt_weight_cmd*(u.cwiseAbs() - dt_ref_) ;
 
   // Penalisation if dt out of lower/upper bound 
   rub_max_ << dt_min_ - u.cwiseAbs() , u.cwiseAbs() - dt_max_; 
@@ -116,22 +119,21 @@ void ActionModelQuadrupedTimeTpl<Scalar>::calcDiff(const boost::shared_ptr<croco
   
   // Cost derivatives : Lx
   d->Lx.template head<12>() = (state_weights_.array()* d->r.template head<12>().array()).matrix() ;
-  d->Lx.template segment<8>(12) = (heuristic_weights_.array()* d->r.template segment<8>(12).array()).matrix() ;
+  d->Lx.template segment<8>(12) = (heuristic_weights_.array()* d->r.template segment<8>(12).array()).matrix() ; // * gait_double in d->r
   
   d->Lu << dt_bound_weight_cmd * std::copysign(1., u(0))* (- rub_max_[0] + rub_max_[1]) ;
-  d->Lu +=   dt_weight_command * std::copysign(1., u(0))* d->r.template tail<1>() ; 
+  d->Lu +=   dt_weight_cmd * std::copysign(1., u(0))* d->r.template tail<1>() ; 
   
   // Hessian : Lxx
   d->Lxx.diagonal().head(12) = (state_weights_.array() * state_weights_.array()).matrix() ;  
-  d->Lxx.diagonal().segment(12,8) = (heuristic_weights_.array() * heuristic_weights_.array()).matrix() ;  
+  d->Lxx.diagonal().segment(12,8) = (gait_double_.array() * heuristic_weights_.array() * heuristic_weights_.array()).matrix() ;  
   
-  d->Luu.diagonal() << dt_weight_command*dt_weight_command + dt_bound_weight_cmd * rub_max_bool[0] + dt_bound_weight_cmd *rub_max_bool[1] ;
+  d->Luu.diagonal() << dt_weight_cmd*dt_weight_cmd + dt_bound_weight_cmd * rub_max_bool[0] + dt_bound_weight_cmd *rub_max_bool[1] ;
 
   // Dynamic derivatives
   d->Fx.setIdentity();
   d->Fx(20,20) = Scalar(0.) ;
   d->Fu.block(20,0,1,1) << std::copysign(1., u(0));  
-
 }
 
 
@@ -160,11 +162,11 @@ void ActionModelQuadrupedTimeTpl<Scalar>::set_state_weights(const typename MathB
 }
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedTimeTpl<Scalar>::get_shoulder_weights() const {
+const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedTimeTpl<Scalar>::get_heuristic_weights() const {
   return heuristic_weights_;
 }
 template <typename Scalar>
-void ActionModelQuadrupedTimeTpl<Scalar>::set_shoulder_weights(const typename MathBase::VectorXs& weights) {
+void ActionModelQuadrupedTimeTpl<Scalar>::set_heuristic_weights(const typename MathBase::VectorXs& weights) {
   if (static_cast<std::size_t>(weights.size()) != 8 ) {
     throw_pretty("Invalid argument: "
                  << "Weights vector has wrong dimension (it should be 8)");
@@ -174,20 +176,8 @@ void ActionModelQuadrupedTimeTpl<Scalar>::set_shoulder_weights(const typename Ma
 
 
 //////////////////////////////////////////////////////////
-//   Param relative to the shoulder heuristic position  //
+//   Param relative to the heuristic position  //
 //////////////////////////////////////////////////////////
-template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedTimeTpl<Scalar>::get_shoulder_position() const {
-  return pshoulder_ ;
-}
-template <typename Scalar>
-void ActionModelQuadrupedTimeTpl<Scalar>::set_shoulder_position(const typename MathBase::VectorXs& pos) {
-  if (static_cast<std::size_t>(pos.size()) != 8 ) {
-    throw_pretty("Invalid argument: "
-                 << "Weights vector has wrong dimension (it should be 8)");
-  }
-  pshoulder_ = pos;
-}
 
 template <typename Scalar>
 const bool& ActionModelQuadrupedTimeTpl<Scalar>::get_symmetry_term() const {
@@ -267,11 +257,11 @@ void ActionModelQuadrupedTimeTpl<Scalar>::set_dt_bound_weight_cmd(const Scalar& 
 ///////////////////////////////////////////////////////////////
 template <typename Scalar>
 const Scalar& ActionModelQuadrupedTimeTpl<Scalar>::get_dt_weight_cmd() const {
-  return dt_weight_command;
+  return dt_weight_cmd;
 }
 template <typename Scalar>
 void ActionModelQuadrupedTimeTpl<Scalar>::set_dt_weight_cmd(const Scalar& weight_) {
-  dt_weight_command = weight_; 
+  dt_weight_cmd = weight_; 
 }
 
 ///////////////////////
@@ -290,7 +280,7 @@ const typename Eigen::Matrix<Scalar, 7, 1>& ActionModelQuadrupedTimeTpl<Scalar>:
 template <typename Scalar>
 void ActionModelQuadrupedTimeTpl<Scalar>::update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet  ,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& S ) {
+                    const Eigen::Ref<const typename MathBase::VectorXs>& S ) {
   if (static_cast<std::size_t>(l_feet.size()) != 12) {
     throw_pretty("Invalid argument: "
                  << "l_feet matrix has wrong dimension (it should be : 3x4)");
@@ -305,23 +295,30 @@ void ActionModelQuadrupedTimeTpl<Scalar>::update_model(const Eigen::Ref<const ty
   }
   // l_feet and S useless, kept for now, to be consistent with others models
 
-  xref_ = xref ; 
+  xref_ = xref;
+  for (int i=0; i<4; i=i+1){
+    gait_double_[2*i] = S[i]; 
+    gait_double_[2*i+1] = S[i]; 
+    pheuristic_[2*i] = l_feet(0,i) ; 
+    pheuristic_[2*i+1] = l_feet(1,i) ; 
+  }
 
-  R_tmp << cos(xref(5,0)) ,-sin(xref(5,0)) , Scalar(0),
-      sin(xref(5,0)), cos(xref(5,0)), Scalar(0),
-      Scalar(0),Scalar(0),Scalar(1.0) ; 
+  // To compute heuristic here
+  // R_tmp << cos(xref(5,0)) ,-sin(xref(5,0)) , Scalar(0),
+  //     sin(xref(5,0)), cos(xref(5,0)), Scalar(0),
+  //     Scalar(0),Scalar(0),Scalar(1.0) ; 
 
-   // Centrifual term 
-  pcentrifugal_tmp_1 = xref.block(6,0,3,1) ; 
-  pcentrifugal_tmp_2 = xref.block(9,0,3,1) ; 
-  pcentrifugal_tmp = 0.5*std::sqrt(xref(2,0)/9.81) * pcentrifugal_tmp_1.cross(pcentrifugal_tmp_2) ; 
+  //  // Centrifual term 
+  // pcentrifugal_tmp_1 = xref.block(6,0,3,1) ; 
+  // pcentrifugal_tmp_2 = xref.block(9,0,3,1) ; 
+  // pcentrifugal_tmp = 0.5*std::sqrt(xref(2,0)/9.81) * pcentrifugal_tmp_1.cross(pcentrifugal_tmp_2) ; 
   
 
-  for (int i=0; i<4; i=i+1){
-    pshoulder_tmp.block(0,i,2,1) =  R_tmp.block(0,0,2,2)*(pshoulder_0.block(0,i,2,1) +   symmetry_term * 0.25*T_gait*xref.block(6,0,2,1) + centrifugal_term * pcentrifugal_tmp.block(0,0,2,1) );
-    pshoulder_[2*i] = pshoulder_tmp(0,i) +   xref(0,0); 
-    pshoulder_[2*i+1] = pshoulder_tmp(1,i) +  xref(1,0); 
-  }     
+  // for (int i=0; i<4; i=i+1){
+  //   pshoulder_tmp.block(0,i,2,1) =  R_tmp.block(0,0,2,2)*(pshoulder_0.block(0,i,2,1) +   symmetry_term * 0.25*T_gait*xref.block(6,0,2,1) + centrifugal_term * pcentrifugal_tmp.block(0,0,2,1) );
+  //   pshoulder_[2*i] = pshoulder_tmp(0,i) +   xref(0,0); 
+  //   pshoulder_[2*i+1] = pshoulder_tmp(1,i) +  xref(1,0); 
+  // }     
  
 }
 }

@@ -7,65 +7,75 @@
 namespace quadruped_walkgen  {
 template <typename Scalar>
 ActionModelQuadrupedStepTimeTpl<Scalar>::ActionModelQuadrupedStepTimeTpl()
-    : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(21), 4, 25)
+    : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(21), 8, 29)
   { 
-
-  B.setZero() ; 
+  B.setZero();  // x_next = x + B * u  
   rub_max_.setZero() ; 
   rub_max_bool.setZero() ;
 
   state_weights_ << Scalar(1.)  , Scalar(1.) , Scalar(150.) , Scalar(35.),
                     Scalar(30.) , Scalar(8.) , Scalar(20.)  , Scalar(20.) , 
                     Scalar(15.) , Scalar(4.) , Scalar(4.)   , Scalar(8.)  ; 
-  heuristicWeights.setConstant(Scalar(1)) ; 
-  pshoulder_ <<  Scalar(0.1946) ,  Scalar(0.15005),  Scalar(0.1946) ,  Scalar(-0.15005) ,
-                 Scalar(-0.1946),  Scalar(0.15005) , Scalar(-0.1946),  Scalar(-0.15005) ; 
-  pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),  Scalar(-0.1946) , 
-                  Scalar(0.15005) ,  Scalar(-0.15005)  , Scalar(0.15005)  ,  Scalar(-0.15005) ; 
-  pshoulder_tmp.setZero() ; 
-  pcentrifugal_tmp_1.setZero() ; 
-  pcentrifugal_tmp_2.setZero() ; 
-  pcentrifugal_tmp.setZero() ; 
+  heuristicWeights.setConstant(Scalar(0.)) ; 
+  step_weights_.setConstant(Scalar(1)) ;
+  pheuristic_.setZero();
+
+  // Compute heuristic inside update Model
+  // pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),  Scalar(-0.1946) , 
+  //                 Scalar(0.15005) ,  Scalar(-0.15005)  , Scalar(0.15005)  ,  Scalar(-0.15005) ; 
+  // pshoulder_tmp.setZero() ; 
+  // pcentrifugal_tmp_1.setZero() ; 
+  // pcentrifugal_tmp_2.setZero() ; 
+  // pcentrifugal_tmp.setZero() ; 
+  // T_gait = Scalar(0.64) ; 
   centrifugal_term = true ; 
   symmetry_term = true ; 
-  T_gait = Scalar(0.64) ; 
-  
-  step_weights_.setConstant(Scalar(1)) ;
 
-  // Optim dt
+  // Weight on the speed ot the feet
   nb_nodes = Scalar(15.) ; 
   vlim = Scalar(2.) ;
   beta_lim = Scalar((64*nb_nodes*nb_nodes*vlim*vlim)/225) ; // apparent speed used in the cost function
   speed_weight = Scalar(10.) ;   
 
-  // Log cost
+  // Logging cost
   cost_.setZero() ; 
   log_cost = true ; 
 
   // indicates whether it t the 1st step, otherwise the cost function is much simpler (acc, speed = 0)
   first_step = false ; 
 
+  // Coefficients for sample velocity of the feet
+  nb_alpha_ = 4;
+  alpha = MathBase::ArrayXs::Zero(nb_alpha_);  
+  alpha2 = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(nb_alpha_, 4);
+  b_coeff = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(nb_alpha_, 3); // Constant for all feet, avoid re-computing them
 
-  alpha.setLinSpaced(3, Scalar(0.0), Scalar(1.0)) ; 
-  alpha2.setZero() ;
+  // Cost = DT * b0(alpha) + DT**2 * b1(alpha) + DX * b2(alpha) for x velocity 
+  b_coeff_x0 = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(nb_alpha_, 4); // col(i) --> foot i
+  b_coeff_x1 = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(nb_alpha_, 4); 
+  b_coeff_x2 = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(nb_alpha_, 4); 
+
+  // Cost = DT * b0(alpha) + DT**2 * b1(alpha) + DX * b2(alpha) for y velocity 
+  b_coeff_y0 = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(nb_alpha_, 4); // col(i) --> foot i
+  b_coeff_y1 = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(nb_alpha_, 4); 
+  b_coeff_y2 = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(nb_alpha_, 4); 
+
+  rub_max_first_x = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(nb_alpha_, 4); 
+  rub_max_first_y = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(nb_alpha_, 4); 
+  rub_max_first_2 = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(nb_alpha_, 4); 
+  rub_max_first_bool = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(nb_alpha_, 4); 
+
+  alpha.setLinSpaced(nb_alpha_, Scalar(0.0), Scalar(1.0)) ; 
   alpha2.col(0) << alpha ;
   alpha2.col(1) << alpha.pow(2) ; 
   alpha2.col(2) << alpha.pow(3) ; 
   alpha2.col(3) << alpha.pow(4) ; 
 
-  b_coeff.setZero();
   b_coeff.col(0) = Scalar(1.0) - Scalar(18.)*alpha2.col(1) + Scalar(32.)*alpha2.col(2) - Scalar(15.)*alpha2.col(3) ; 
   b_coeff.col(1) = alpha2.col(0) - Scalar(4.5)*alpha2.col(1) + Scalar(6.)*alpha2.col(2) - Scalar(2.5)*alpha2.col(3) ; 
   b_coeff.col(2) = Scalar(30.)*alpha2.col(1) - Scalar(60.)*alpha2.col(2) + Scalar(30.)*alpha2.col(3) ; 
 
-  b_coeff2.setZero() ;
-
   lfeet.setZero() ;
-  rub_max_bool_first.setZero() ; 
-  rub_max_first.setZero() ; 
-  rub_max_first_2.setZero() ;
-  
- 
 }
 
 
@@ -87,31 +97,38 @@ void ActionModelQuadrupedStepTimeTpl<Scalar>::calc(const boost::shared_ptr<croco
   }
 
   ActionDataQuadrupedStepTimeTpl<Scalar>* d = static_cast<ActionDataQuadrupedStepTimeTpl<Scalar>*>(data.get());
- 
+  
+  // Update position of the feet
   d->xnext.template head<12>() = x.head(12) ; 
-  d->xnext.template segment<8>(12) = x.segment(12,8) + B*u;
+  d->xnext.template segment<8>(12) = x.segment(12,8) + B * u;
   d->xnext.template tail<1>() = x.tail(1) ; 
   
   // Residual cost on the state and force norm
   d->r.template head<12>() =  state_weights_.cwiseProduct(x.head(12) - xref_);
-  d->r.template segment<8>(12) = heuristicWeights.cwiseProduct(x.segment(12,8) - pshoulder_); 
+  d->r.template segment<8>(12) = heuristicWeights.cwiseProduct(x.segment(12,8) - pheuristic_); // Not used, set to 0, S matrix is for moving feet and not feet already on the ground
   d->r.template tail<4>() =  step_weights_.cwiseProduct(u);
+
+  d->cost = Scalar(0.5) * d->r.transpose() * d->r  ;
 
   if (first_step){
     for (int i = 0 ; i < 4 ; i++){
-      rub_max_first.col(i) << x(20)*b_coeff2.col(3*i) + x(20)*x(20)*b_coeff2.col(3*i+1) + u(i)*b_coeff2.col(3*i+2) + lfeet(0,i)*b_coeff2.col(3*i+2);
+      if (S_[i] == Scalar(1)) {
+        rub_max_first_x.col(i) = x(20)*b_coeff_x0.col(i) + x(20)*x(20)*b_coeff_x1.col(i) + u(2*i)*b_coeff_x2.col(i);
+        rub_max_first_y.col(i) = x(20)*b_coeff_y0.col(i) + x(20)*x(20)*b_coeff_y1.col(i) + u(2*i+1)*b_coeff_y2.col(i);
+
+        rub_max_first_2.col(i) = rub_max_first_x.col(i).pow(2) + rub_max_first_y.col(i).pow(2) - x(20)*x(20)*vlim*vlim*nb_nodes*nb_nodes;
+      }
+      else{
+        rub_max_first_2.col(i).setZero();
+      }
     }
 
-    rub_max_first_2.col(0) << rub_max_first.col(0).pow(2) + rub_max_first.col(1).pow(2) - x(20)*x(20)*vlim*vlim*nb_nodes*nb_nodes ; 
-    rub_max_first_2.col(1) << rub_max_first.col(2).pow(2) + rub_max_first.col(3).pow(2) - x(20)*x(20)*vlim*vlim*nb_nodes*nb_nodes ; 
-    
-    rub_max_bool_first = (rub_max_first_2 > Scalar(0.)).template cast<Scalar>() ;  
-    rub_max_first_2 = rub_max_first_2.cwiseMax(Scalar(0.)) ; 
+    rub_max_first_bool = ( rub_max_first_2 > Scalar(0.) ).template cast<Scalar>(); // Usefull to compute the derivatives
+    rub_max_first_2 = rub_max_first_2.cwiseMax(Scalar(0.));   // Remove <0 terms
 
-    d->cost = Scalar(0.5) * d->r.transpose() * d->r  ;
-    for (int i=0 ; i<3 ; i++){
+    for (int i=0 ; i<nb_alpha_ ; i++){
       d->cost +=  speed_weight * Scalar(0.5) * rub_max_first_2.row(i).sum() ;
-    }
+    } 
   }
   else{
     rub_max_ <<  u[0]*u[0] + u[1]*u[1] - beta_lim*x[20]*x[20] , u[2]*u[2] + u[3]*u[3] - beta_lim*x[20]*x[20] ;
@@ -119,10 +136,9 @@ void ActionModelQuadrupedStepTimeTpl<Scalar>::calc(const boost::shared_ptr<croco
     rub_max_bool = (rub_max_.array() >= Scalar(0.)).matrix().template cast<Scalar>() ; 
     rub_max_ = rub_max_.cwiseMax(Scalar(0.)) ; 
 
-    d->cost = Scalar(0.5) * d->r.transpose() * d->r  + speed_weight * Scalar(0.5) * rub_max_.sum();
+    d->cost += speed_weight * Scalar(0.5) * rub_max_.sum();
   }
   
-
   if (log_cost){
     cost_[3] = 0 ; 
     // Length to be consistent with others models
@@ -167,47 +183,34 @@ void ActionModelQuadrupedStepTimeTpl<Scalar>::calcDiff(const boost::shared_ptr<c
   d->Lx.template segment<8>(12) = (heuristicWeights.array()* d->r.template segment<8>(12).array()).matrix() ;
 
   if (first_step){
-    for (int i=0 ; i <3 ; i++){
-      // First foot
-      if (rub_max_bool_first(i,0)){
-        d->Lx(20) += speed_weight*( b_coeff2(i,0) + Scalar(2)*x(20)*b_coeff2(i,1))*rub_max_first(i,0) +
-                     speed_weight*( b_coeff2(i,3) + Scalar(2)*x(20)*b_coeff2(i,4))*rub_max_first(i,1) -
-                     speed_weight*x(20)*vlim*vlim*nb_nodes*nb_nodes;
-        d->Lu(0) += speed_weight*b_coeff2(i,2)*rub_max_first(i,0)  ;  
-        d->Lu(1) += speed_weight*b_coeff2(i,5)*rub_max_first(i,1)  ;  
 
-        d->Luu(0,0) += speed_weight*b_coeff2(i,2)*b_coeff2(i,2)  ; 
-        d->Luu(1,1) += speed_weight*b_coeff2(i,5)*b_coeff2(i,5)  ; 
-        d->Lxu(20,0) += speed_weight*( b_coeff2(i,0) + Scalar(2)*x(20)*b_coeff2(i,1))*b_coeff2(i,2) ;
-        d->Lxu(20,1) += speed_weight*( b_coeff2(i,3) + Scalar(2)*x(20)*b_coeff2(i,4))*b_coeff2(i,5) ; 
-        d->Lxx(20,20) += speed_weight*std::pow( b_coeff2(i,0) + Scalar(2)*x(20)*b_coeff2(i,1) , 2) + 
-                        speed_weight*Scalar(2)*b_coeff2(i,1)*rub_max_first(i,0) +
-                        speed_weight*std::pow( b_coeff2(i,3) + Scalar(2)*x(20)*b_coeff2(i,4) , 2) + 
-                        speed_weight*Scalar(2)*b_coeff2(i,4)*rub_max_first(i,1) -
-                        speed_weight*vlim*vlim*nb_nodes*nb_nodes ; 
+    for (int foot=0; foot < 4; foot++){
+      if (S_[foot] == Scalar(1)) {
+        for (int i=0; i < nb_alpha_; i++){
 
-      } 
-    
-      //  Second foot
-      if (rub_max_bool_first(i,1)){
-        d->Lx(20) += speed_weight*( b_coeff2(i,6) + Scalar(2)*x(20)*b_coeff2(i,7))*rub_max_first(i,2) +
-                        speed_weight*( b_coeff2(i,9) + Scalar(2)*x(20)*b_coeff2(i,10))*rub_max_first(i,3) -
-                        speed_weight*x(20)*vlim*vlim*nb_nodes*nb_nodes;
-        d->Lu(2) += speed_weight*b_coeff2(i,8)*rub_max_first(i,2)  ;  
-        d->Lu(3) += speed_weight*b_coeff2(i,11)*rub_max_first(i,3)  ;  
+          if (rub_max_first_bool(i,foot)){
+            d->Lx(20) +=  speed_weight*( b_coeff_x0(i,foot) + Scalar(2)*x(20)*b_coeff_x1(i,foot))*rub_max_first_x(i,foot) +
+                          speed_weight*( b_coeff_y0(i,foot) + Scalar(2)*x(20)*b_coeff_y1(i,foot))*rub_max_first_y(i,foot) -
+                          speed_weight*x(20)*vlim*vlim*nb_nodes*nb_nodes;
+            d->Lu(2*foot) += speed_weight*b_coeff_x2(i,foot)*rub_max_first_x(i,foot);  
+            d->Lu(2*foot + 1) += speed_weight*b_coeff_y2(i,foot)*rub_max_first_y(i,foot);  
 
-        d->Luu(2,2) += speed_weight*b_coeff2(i,8)*b_coeff2(i,8)  ; 
-        d->Luu(3,3) += speed_weight*b_coeff2(i,11)*b_coeff2(i,11)  ; 
-        d->Lxu(20,2) += speed_weight*( b_coeff2(i,6) + Scalar(2)*x(20)*b_coeff2(i,7))*b_coeff2(i,8) ; 
-        d->Lxu(20,3) += speed_weight*( b_coeff2(i,9) + Scalar(2)*x(20)*b_coeff2(i,10))*b_coeff2(i,11) ;
-        d->Lxx(20,20) += speed_weight*std::pow( b_coeff2(i,6) + Scalar(2)*x(20)*b_coeff2(i,7) , 2) + 
-                        speed_weight*Scalar(2)*b_coeff2(i,7)*rub_max_first(i,2) +
-                        speed_weight*std::pow( b_coeff2(i,9) + Scalar(2)*x(20)*b_coeff2(i,10) , 2) + 
-                        speed_weight*Scalar(2)*b_coeff2(i,10)*rub_max_first(i,3) -
-                        speed_weight*vlim*vlim*nb_nodes*nb_nodes ; 
+            d->Luu(2*foot,2*foot) += speed_weight*b_coeff_x2(i,foot)*b_coeff_x2(i,foot); 
+            d->Luu(2*foot+1,2*foot+1) += speed_weight*b_coeff_y2(i,foot)*b_coeff_y2(i,foot); 
+            d->Lxu(20,2*foot) += speed_weight*( b_coeff_x0(i,foot) + Scalar(2)*x(20)*b_coeff_x1(i,foot))*b_coeff_x2(i,foot);
+            d->Lxu(20,2*foot+1) += speed_weight*( b_coeff_y0(i,foot) + Scalar(2)*x(20)*b_coeff_y1(i,foot))*b_coeff_y2(i,foot); 
+            d->Lxx(20,20) +=  speed_weight*std::pow( b_coeff_x0(i,foot) + Scalar(2)*x(20)*b_coeff_x1(i,foot) , 2) + 
+                              speed_weight*Scalar(2)*b_coeff_x1(i,foot)*rub_max_first_x(i,foot) +
+                              speed_weight*std::pow( b_coeff_y0(i,foot) + Scalar(2)*x(20)*b_coeff_x1(i,foot) , 2) + 
+                              speed_weight*Scalar(2)*b_coeff_y1(i,foot)*rub_max_first_y(i,foot) -
+                              speed_weight*vlim*vlim*nb_nodes*nb_nodes ;                             
+          }
+        }
       }
     }
+
   }
+
   else{
     d->Lx.template tail<1>() << - beta_lim*speed_weight*x(20)*rub_max_bool[0] - beta_lim*speed_weight*x(20)*rub_max_bool[1] ;
  
@@ -228,15 +231,13 @@ void ActionModelQuadrupedStepTimeTpl<Scalar>::calcDiff(const boost::shared_ptr<c
   
   // Hessian : Lxx
   d->Lxx.diagonal().head(12) = (state_weights_.array() * state_weights_.array()).matrix() ;  
-  d->Lxx.diagonal().segment(12,8) = (heuristicWeights.array() * heuristicWeights.array()).matrix() ;  
-
-  
+  d->Lxx.diagonal().segment(12,8) = (heuristicWeights.array() * heuristicWeights.array()).matrix() ;    
   
   d->Luu.diagonal() += (step_weights_.array() * step_weights_.array()).matrix() ;
 
   // Dynamic derivatives
   d->Fx.setIdentity();
-  d->Fu.block(12,0,8,4) = B;  
+  d->Fu.block(12,0,8,8) = B;  
 }
 
 
@@ -270,9 +271,9 @@ const typename Eigen::Matrix<Scalar, 4, 1>& ActionModelQuadrupedStepTimeTpl<Scal
 }
 template <typename Scalar>
 void ActionModelQuadrupedStepTimeTpl<Scalar>::set_step_weights(const typename MathBase::VectorXs& weights) {
-  if (static_cast<std::size_t>(weights.size()) != 4 ) {
+  if (static_cast<std::size_t>(weights.size()) != 8 ) {
     throw_pretty("Invalid argument: "
-                 << "Weights vector has wrong dimension (it should be 4)");
+                 << "Weights vector has wrong dimension (it should be 8)");
   }
   step_weights_ = weights;
 }
@@ -288,19 +289,6 @@ void ActionModelQuadrupedStepTimeTpl<Scalar>::set_heuristic_weights(const typena
                  << "Weights vector has wrong dimension (it should be 8)");
   }
   heuristicWeights = weights;
-}
-
-template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedStepTimeTpl<Scalar>::get_shoulder_position() const {
-  return pshoulder_ ;
-}
-template <typename Scalar>
-void ActionModelQuadrupedStepTimeTpl<Scalar>::set_shoulder_position(const typename MathBase::VectorXs& pos) {
-  if (static_cast<std::size_t>(pos.size()) != 8 ) {
-    throw_pretty("Invalid argument: "
-                 << "Weights vector has wrong dimension (it should be 8)");
-  }
-  pshoulder_ = pos;
 }
 
 template <typename Scalar>
@@ -393,9 +381,11 @@ void ActionModelQuadrupedStepTimeTpl<Scalar>::set_first_step(const bool& first) 
 ////////////////////////
 
 template <typename Scalar>
-void ActionModelQuadrupedStepTimeTpl<Scalar>::update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet  ,
+void ActionModelQuadrupedStepTimeTpl<Scalar>::update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet,
+                    const Eigen::Ref<const typename MathBase::MatrixXs>& velocity,
+                    const Eigen::Ref<const typename MathBase::MatrixXs>& acceleration,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& S ) {
+                    const Eigen::Ref<const typename MathBase::VectorXs>& S ) {
   if (static_cast<std::size_t>(l_feet.size()) != 12) {
     throw_pretty("Invalid argument: "
                  << "l_feet matrix has wrong dimension (it should be : 3x4)");
@@ -408,50 +398,67 @@ void ActionModelQuadrupedStepTimeTpl<Scalar>::update_model(const Eigen::Ref<cons
     throw_pretty("Invalid argument: "
                  << "S vector has wrong dimension (it should be 4x1)");
   }
-
-  // In this model, l_feet contain : 
-  // pheur_x  -  p0_x1   ;  pheur_y  -  p0_y1    ;  p0_x2   ;  p0_y2
-  // v0_x1   ;  v0_y1   ;  v0_x2   ;  v0_y2
-  // acc0_x1 ;  acc0_y1 ;  acc0_x2 ;  acc0_y2 ;
-  lfeet = l_feet ;
+  // Velocity :  [[vx_0, vx_1, vx_2, vx_3],
+  //              [vy_0, vy_1, vy_2, vy_3],
+  //              [vz_0, vz_1, vz_2, vz_3]]
 
   for (int i=0; i<4; i=i+1){
-    b_coeff2.col(3*i) = nb_nodes*lfeet(1,i)*b_coeff.col(0) ; 
-    b_coeff2.col(3*i+1) = nb_nodes*nb_nodes*lfeet(2,i)*b_coeff.col(1) ; 
-    b_coeff2.col(3*i+2) = b_coeff.col(2) ;
-  }  
-
-  xref_ = xref ; 
-
-  R_tmp << cos(xref(5,0)) ,-sin(xref(5,0)) , Scalar(0),
-      sin(xref(5,0)), cos(xref(5,0)), Scalar(0),
-      Scalar(0),Scalar(0),Scalar(1.0) ; 
-
-   // Centrifual term 
-  pcentrifugal_tmp_1 = xref.block(6,0,3,1) ; 
-  pcentrifugal_tmp_2 = xref.block(9,0,3,1) ; 
-  pcentrifugal_tmp = 0.5*std::sqrt(xref(2,0)/9.81) * pcentrifugal_tmp_1.cross(pcentrifugal_tmp_2) ; 
-  
-
-  for (int i=0; i<4; i=i+1){
-    pshoulder_tmp.block(0,i,2,1) =  R_tmp.block(0,0,2,2)*(pshoulder_0.block(0,i,2,1) +   symmetry_term * 0.25*T_gait*xref.block(6,0,2,1) + centrifugal_term * pcentrifugal_tmp.block(0,0,2,1) );
-    pshoulder_[2*i] = pshoulder_tmp(0,i) +   xref(0,0); 
-    pshoulder_[2*i+1] = pshoulder_tmp(1,i) +  xref(1,0); 
+    pheuristic_.block(2*i,0,2,1) = l_feet.block(0,i,2,1) ; 
   }
+  xref_ = xref ; 
+  S_ = S;
+
+  for (int i=0; i<4; i++){
+    if (S[i] == Scalar(1)) {
+      // Coeff for x velocity
+      b_coeff_x0.col(i) = nb_nodes*velocity(0,i)*b_coeff.col(0);
+      b_coeff_x1.col(i) = nb_nodes*nb_nodes*acceleration(0,i)*b_coeff.col(1);
+      b_coeff_x2.col(i) = b_coeff.col(2);
+
+      // Coeff for y velocity
+      b_coeff_y0.col(i) = nb_nodes*velocity(1,i)*b_coeff.col(0);
+      b_coeff_y1.col(i) = nb_nodes*nb_nodes*acceleration(1,i)*b_coeff.col(1);
+      b_coeff_y2.col(i) = b_coeff.col(2);
+    }
+    else{
+      b_coeff_x0.col(i).setZero();
+      b_coeff_x1.col(i).setZero();
+      b_coeff_x2.col(i).setZero();
+      b_coeff_y0.col(i).setZero();
+      b_coeff_y1.col(i).setZero();
+      b_coeff_y2.col(i).setZero();
+    }
+  }
+
+  // Compute heuristic inside update_model
+  // R_tmp << cos(xref(5,0)) ,-sin(xref(5,0)) , Scalar(0),
+  //     sin(xref(5,0)), cos(xref(5,0)), Scalar(0),
+  //     Scalar(0),Scalar(0),Scalar(1.0) ; 
+  //  // Centrifual term 
+  // pcentrifugal_tmp_1 = xref.block(6,0,3,1) ; 
+  // pcentrifugal_tmp_2 = xref.block(9,0,3,1) ; 
+  // pcentrifugal_tmp = 0.5*std::sqrt(xref(2,0)/9.81) * pcentrifugal_tmp_1.cross(pcentrifugal_tmp_2) ;  
+
+  // for (int i=0; i<4; i=i+1){
+  //   pshoulder_tmp.block(0,i,2,1) =  R_tmp.block(0,0,2,2)*(pshoulder_0.block(0,i,2,1) +   symmetry_term * 0.25*T_gait*xref.block(6,0,2,1) + centrifugal_term * pcentrifugal_tmp.block(0,0,2,1) );
+  //   pshoulder_[2*i] = pshoulder_tmp(0,i) +   xref(0,0); 
+  //   pshoulder_[2*i+1] = pshoulder_tmp(1,i) +  xref(1,0); 
+  // }
 
   B.setZero() ; 
-
-  if (S(0,0) == Scalar(1)) {
-    B.block(0,0,2,2).setIdentity() ; 
-    B.block(6,2,2,2).setIdentity() ;  
+  // Set B matrix according to the moving feet : S = gait - gait_old
+  if (S[0] == Scalar(1)) {
+    B.block(0, 0, 2, 2).setIdentity();    
   }
-  else {
-    B.block(2,0,2,2).setIdentity() ; 
-    B.block(4,2,2,2).setIdentity() ;  
-
+  if (S[1] == Scalar(1)) {
+    B.block(2, 2, 2, 2).setIdentity();    
   }
-      
- 
+  if (S[2] == Scalar(1)) {
+    B.block(4, 4, 2, 2).setIdentity();    
+  }
+  if (S[3] == Scalar(1)) {
+    B.block(6, 6, 2, 2).setIdentity();    
+  }    
 }
 }
 

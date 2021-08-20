@@ -36,11 +36,11 @@ class ActionModelQuadrupedAugmentedTimeTpl : public crocoddyl::ActionModelAbstra
   const typename Eigen::Matrix<Scalar, 12, 1>& get_state_weights() const;
   void set_state_weights(const typename MathBase::VectorXs& weights);
 
-  const typename Eigen::Matrix<Scalar, 8, 1>& get_shoulder_weights() const;
-  void set_shoulder_weights(const typename MathBase::VectorXs& weights);
+  const typename Eigen::Matrix<Scalar, 8, 1>& get_heuristic_weights() const;
+  void set_heuristic_weights(const typename MathBase::VectorXs& weights);
 
-  const typename Eigen::Matrix<Scalar, 8, 1>& get_last_position_weights() const;
-  void set_last_position_weights(const typename MathBase::VectorXs& weights);  
+  const typename Eigen::Matrix<Scalar, 8, 1>& get_stop_weights() const;
+  void set_stop_weights(const typename MathBase::VectorXs& weights);  
 
   const Scalar& get_friction_weight() const;
   void set_friction_weight(const Scalar& weight);
@@ -94,14 +94,15 @@ class ActionModelQuadrupedAugmentedTimeTpl : public crocoddyl::ActionModelAbstra
   const Scalar& get_shoulder_hlim() const;
   void set_shoulder_hlim(const Scalar& hlim);
 
-  const Scalar& get_shoulder_weight() const;
-  void set_shoulder_weight(const Scalar& weight);
+  const Scalar& get_shoulder_contact_weight() const;
+  void set_shoulder_contact_weight(const Scalar& weight);
 
 
 
   // Update the model depending if the foot in contact with the ground 
   // or the new lever arms
-  void update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet  ,
+  void update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet,
+                    const Eigen::Ref<const typename MathBase::MatrixXs>& l_stop,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& S ) ;
 
@@ -155,6 +156,7 @@ class ActionModelQuadrupedAugmentedTimeTpl : public crocoddyl::ActionModelAbstra
   typename MathBase::MatrixXs xref_;  
 
   typename Eigen::Matrix<Scalar, 8 , 1 > pshoulder_;  
+  typename Eigen::Matrix<Scalar, 8 , 1 > pheuristic_;  
   typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_0;  
   typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_tmp;  
 
