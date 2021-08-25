@@ -73,8 +73,8 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   const Scalar& get_shoulder_hlim() const;
   void set_shoulder_hlim(const Scalar& hlim);
 
-  const Scalar& get_shoulder_contact_weight() const;
-  void set_shoulder_contact_weight(const Scalar& weight);
+  const typename Eigen::Matrix<Scalar, 4, 1>& get_shoulder_contact_weight() const;
+  void set_shoulder_contact_weight(const typename Eigen::Matrix<Scalar, 4, 1>& weight);
 
   // Update the model depending if the foot in contact with the ground
   // or the new lever arms
@@ -157,7 +157,7 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   // Cost relative to the shoulder height
   typename Eigen::Matrix<Scalar, 3, 4> psh;
   typename Eigen::Matrix<Scalar, 4, 1> sh_ub_max_;
-  Scalar sh_weight;
+  typename Eigen::Matrix<Scalar, 4, 1> sh_weight; 
   Scalar sh_hlim;
   Scalar offset_com;
 };
