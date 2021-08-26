@@ -76,6 +76,9 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   const typename Eigen::Matrix<Scalar, 4, 1>& get_shoulder_contact_weight() const;
   void set_shoulder_contact_weight(const typename Eigen::Matrix<Scalar, 4, 1>& weight);
 
+  const bool& get_shoulder_reference_position() const;
+  void set_shoulder_reference_position(const bool& reference);
+
   // Update the model depending if the foot in contact with the ground
   // or the new lever arms
   void update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet,
@@ -108,7 +111,11 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   Scalar T_gait;
   bool centrifugal_term;
   bool symmetry_term;
-  bool relative_forces;
+  bool relative_forces; 
+  
+  // Using the reference trajectory (true) or the predicted trajectory (false) of the CoM
+  // to compute the distance shoulder / contact point. 
+  bool shoulder_reference_position;
 
   typename Eigen::Matrix<Scalar, 12, 1> uref_;
 
