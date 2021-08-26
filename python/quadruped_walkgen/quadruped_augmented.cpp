@@ -90,7 +90,9 @@ void exposeActionQuadrupedAugmented() {
       .add_property("centrifugal_term", bp::make_function(&ActionModelQuadrupedAugmented::get_centrifugal_term, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_centrifugal_term) , "centrifugal term for the foot position heuristic") 
       .add_property("T_gait", bp::make_function(&ActionModelQuadrupedAugmented::get_T_gait, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedAugmented::set_T_gait) , "Gait period, used to compute the symmetry term") ;
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_T_gait) , "Gait period, used to compute the symmetry term")
+      .add_property("shoulderReferencePosition", bp::make_function(&ActionModelQuadrupedAugmented::get_shoulder_reference_position, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_shoulder_reference_position) , "Bool, reference trajectory of the shoulder to compute the shoulder-to-contact cost");
      
      
 
