@@ -71,6 +71,8 @@ void exposeActionQuadrupedAugmented() {
                     bp::make_function(&ActionModelQuadrupedAugmented::set_dt) , "Minimum normal force allowed for feet in contact with the ground \n Warning : The model needs to be updated")
       .add_property("min_fz", bp::make_function(&ActionModelQuadrupedAugmented::get_min_fz_contact, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_min_fz_contact) , "dt \n Warning : The model needs to be updated")
+      .add_property("max_fz", bp::make_function(&ActionModelQuadrupedAugmented::get_max_fz_contact, bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedAugmented::set_max_fz_contact) , "dt \n Warning : The model needs to be updated")
       .add_property("gI", bp::make_function(&ActionModelQuadrupedAugmented::get_gI, bp::return_value_policy<bp::return_by_value>()),
                     bp::make_function(&ActionModelQuadrupedAugmented::set_gI) , "Inertia matrix of the robot in body frame (found in urdf) \n Warning : The model needs to be updated")
       .add_property("A",

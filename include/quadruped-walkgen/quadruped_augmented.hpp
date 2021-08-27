@@ -60,6 +60,9 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   const Scalar& get_min_fz_contact() const;
   void set_min_fz_contact(const Scalar& min_fz);
 
+  const Scalar& get_max_fz_contact() const;
+  void set_max_fz_contact(const Scalar& max_fz);
+
   const bool& get_symmetry_term() const;
   void set_symmetry_term(const bool& sym_term);
 
@@ -108,6 +111,7 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   Scalar mu;
   Scalar friction_weight_;
   Scalar min_fz_in_contact;
+  Scalar max_fz_in_contact;
   Scalar T_gait;
   bool centrifugal_term;
   bool symmetry_term;
@@ -146,13 +150,13 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   typename Eigen::Matrix<Scalar, 8, 1> pstop_;
   typename Eigen::Matrix<Scalar, 8, 1> pheuristic_;
 
-  typename Eigen::Matrix<Scalar, 20, 1> ub;
+  typename Eigen::Matrix<Scalar, 24, 1> ub;
 
-  typename Eigen::Matrix<Scalar, 20, 1> Fa_x_u;
+  typename Eigen::Matrix<Scalar, 24, 1> Fa_x_u;
   typename Eigen::Matrix<Scalar, 20, 1> rub_;
-  typename Eigen::Matrix<Scalar, 20, 1> rub_max_;
-  typename Eigen::Matrix<Scalar, 20, 20> Arr;
-  typename Eigen::Matrix<Scalar, 5, 1> r;
+  typename Eigen::Matrix<Scalar, 24, 1> rub_max_;
+  typename Eigen::Matrix<Scalar, 24, 24> Arr;
+  typename Eigen::Matrix<Scalar, 6, 1> r;
   typename Eigen::Matrix<Scalar, 4, 1> gait;
   typename Eigen::Matrix<Scalar, 8, 1> gait_double;
 
