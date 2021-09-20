@@ -127,7 +127,14 @@ int main(int argc, char* argv[]) {
           S_tmp = gait.block(j,1,1,4) - gait.block(j - 1 ,1,1,4) ; 
           model3->update_model(Eigen::Map<Eigen::Matrix<double,3,4> >(tmp.data() ,3,4) ,
                             Eigen::Map<Eigen::Matrix<double,12,1> >(xref.block(0,k,12,1).data() ,12,1),
-                            Eigen::Map<Eigen::Matrix<double,4,1> >(S_tmp.data() ,4,1)) ;   
+                            Eigen::Map<Eigen::Matrix<double,4,1> >(S_tmp.data() ,4,1),
+                            Eigen::Matrix<double,3,4>::Zero(),
+                            Eigen::Matrix<double,3,4>::Zero(),
+                            Eigen::Matrix<double,3,4>::Zero(),
+                            Eigen::Matrix<double,3,4>::Zero(),
+                            Eigen::Matrix<double,3,3>::Zero(),
+                            Eigen::Matrix<double,3,1>::Zero(),
+                            0.16) ;   
        
           gap = gap + 1 ; 
           us.push_back(u0_step)  ;
