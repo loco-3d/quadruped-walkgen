@@ -5,7 +5,7 @@
 
 namespace quadruped_walkgen {
 template <typename Scalar>
-ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
+ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl(typename Eigen::Matrix<Scalar, 3, 1> offset_CoM)
     : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(12), 12, 24) {
   // Relative forces to compute the norm mof the command
   relative_forces = false;
@@ -61,7 +61,7 @@ ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl()
   // Implicit integration
   // V+ = V + dt*B*u   ; P+ = P + dt*V+ != explicit : P+ = P + dt*V
   implicit_integration = true;
-  offset_com = Scalar(-0.03); // z_offset
+  offset_com = offset_CoM; // x, y, z offset
 }
 
 template <typename Scalar>
@@ -85,9 +85,9 @@ void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::Ac
   for (int i = 0; i < 4; i = i + 1) {
     if (gait(i, 0) != 0) {
       // Compute pdistance of the shoulder wrt contact point
-      psh.block(0, i, 3, 1) << x[0] + pshoulder_0(0, i) - pshoulder_0(1, i) * x[5] - lever_arms(0, i),
-          x[1] + pshoulder_0(1, i) + pshoulder_0(0, i) * x[5] - lever_arms(1, i),
-          x[2] - offset_com + pshoulder_0(1, i) * x[3] - pshoulder_0(0, i) * x[4];
+      psh.block(0, i, 3, 1) << x[0] - offset_com(0, 0) + pshoulder_0(0, i) - pshoulder_0(1, i) * x[5] - lever_arms(0, i),
+          x[1] - offset_com(1, 0) + pshoulder_0(1, i) + pshoulder_0(0, i) * x[5] - lever_arms(1, i),
+          x[2] - offset_com(2, 0) + pshoulder_0(1, i) * x[3] - pshoulder_0(0, i) * x[4];
     } else {
       // Compute pdistance of the shoulder wrt contact point
       psh.block(0, i, 3, 1).setZero();

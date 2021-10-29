@@ -18,7 +18,7 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   typedef crocoddyl::ActionModelAbstractTpl<Scalar> Base;
   typedef crocoddyl::MathBaseTpl<Scalar> MathBase;
 
-  ActionModelQuadrupedTpl();
+  ActionModelQuadrupedTpl(typename Eigen::Matrix<Scalar, 3, 1> offset_CoM = Eigen::Matrix<Scalar, 3, 1>::Zero());
   ~ActionModelQuadrupedTpl();
 
   virtual void calc(const boost::shared_ptr<ActionDataAbstract>& data,
@@ -127,9 +127,9 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   typename Eigen::Matrix<Scalar, 3, 4> psh;
   typename Eigen::Matrix<Scalar, 4, 1> sh_ub_max_;
   typename Eigen::Matrix<Scalar, 4, 1> gait;
+  typename Eigen::Matrix<Scalar, 3, 1> offset_com;
   Scalar sh_weight;
   Scalar sh_hlim;
-  Scalar offset_com;
 
 };
 

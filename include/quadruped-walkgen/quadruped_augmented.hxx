@@ -5,7 +5,7 @@
 
 namespace quadruped_walkgen {
 template <typename Scalar>
-ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl()
+ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl(typename Eigen::Matrix<Scalar, 3, 1> offset_CoM)
     : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(20), 12, 32) {
   // Relative forces to compute the norm mof the command
   relative_forces = true;
@@ -78,7 +78,7 @@ ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl()
   sh_ub_max_.setZero();
   psh.setZero();
   pheuristic_.setZero();
-  offset_com = Scalar(-0.03); // z offset
+  offset_com = offset_CoM; // x, y, z offset
 
   shoulder_reference_position = false; // Using predicted trajectory of the CoM
 }
@@ -114,17 +114,17 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calc(
       // Compute pdistance of the shoulder wrt contact point
       if (shoulder_reference_position){
         // Ref vector as reference for the shoulder trajectory, roll and pitch at first
-        psh.block(0, i, 3, 1) << xref_(0,0) + pshoulder_0(0, i)*cos(xref_(5, 0)) - pshoulder_0(1, i)*sin(xref_(5, 0)) - x(12 + 2 * i),
-                                 xref_(1,0) + pshoulder_0(0, i)*sin(xref_(5, 0)) + pshoulder_0(1, i)*cos(xref_(5, 0)) - x(12 + 2 * i + 1),
-                                 xref_(2,0) - offset_com;
+        psh.block(0, i, 3, 1) << xref_(0,0) - offset_com(0, 0) + pshoulder_0(0, i)*cos(xref_(5, 0)) - pshoulder_0(1, i)*sin(xref_(5, 0)) - x(12 + 2 * i),
+                                 xref_(1,0) - offset_com(1, 0) + pshoulder_0(0, i)*sin(xref_(5, 0)) + pshoulder_0(1, i)*cos(xref_(5, 0)) - x(12 + 2 * i + 1),
+                                 xref_(2,0) - offset_com(2, 0);
       } else{
         // psh.block(0, i, 3, 1) << x(0) + pshoulder_0(0, i) - pshoulder_0(1, i) * x(5) - x(12 + 2 * i),
         //                          x(1) + pshoulder_0(1, i) + pshoulder_0(0, i) * x(5) - x(12 + 2 * i + 1),
         //                          x(2) - offset_com + pshoulder_0(1, i) * x(3) - pshoulder_0(0, i) * x(4);
         // Correction, no approximation for yaw
-        psh.block(0, i, 3, 1) << x(0) + pshoulder_0(0, i) * cos(x(5)) - pshoulder_0(1, i) * sin(x(5)) - x(12 + 2 * i),
-                                 x(1) + pshoulder_0(0, i) * sin(x(5)) + pshoulder_0(1, i) * cos(x(5)) - x(12 + 2 * i + 1),
-                                 x(2) - offset_com + pshoulder_0(1, i) * x(3) - pshoulder_0(0, i) * x(4);
+        psh.block(0, i, 3, 1) << x(0) - offset_com(0, 0) + pshoulder_0(0, i) * cos(x(5)) - pshoulder_0(1, i) * sin(x(5)) - x(12 + 2 * i),
+                                 x(1) - offset_com(1, 0) + pshoulder_0(0, i) * sin(x(5)) + pshoulder_0(1, i) * cos(x(5)) - x(12 + 2 * i + 1),
+                                 x(2) - offset_com(2, 0) + pshoulder_0(1, i) * x(3) - pshoulder_0(0, i) * x(4);
       }
       
     } else {

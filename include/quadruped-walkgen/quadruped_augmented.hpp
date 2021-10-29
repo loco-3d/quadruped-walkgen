@@ -18,7 +18,7 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   typedef crocoddyl::ActionModelAbstractTpl<Scalar> Base;
   typedef crocoddyl::MathBaseTpl<Scalar> MathBase;
 
-  ActionModelQuadrupedAugmentedTpl();
+  ActionModelQuadrupedAugmentedTpl(typename Eigen::Matrix<Scalar, 3, 1> offset_CoM = Eigen::Matrix<Scalar, 3, 1>::Zero());
   ~ActionModelQuadrupedAugmentedTpl();
 
   virtual void calc(const boost::shared_ptr<ActionDataAbstract>& data,
@@ -168,9 +168,9 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   // Cost relative to the shoulder height
   typename Eigen::Matrix<Scalar, 3, 4> psh;
   typename Eigen::Matrix<Scalar, 4, 1> sh_ub_max_;
-  typename Eigen::Matrix<Scalar, 4, 1> sh_weight; 
+  typename Eigen::Matrix<Scalar, 4, 1> sh_weight;
+  typename Eigen::Matrix<Scalar, 3, 1> offset_com;
   Scalar sh_hlim;
-  Scalar offset_com;
 };
 
 template <typename _Scalar>

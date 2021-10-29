@@ -17,7 +17,7 @@ void exposeActionQuadrupedNonLinear() {
       "x = [x , y, z, rool, pitch, yaw, Vx, Vy, Vz, Vrool, Vpitch, Vyaw] , 12x \n\n"
       "and u is the groud reaction forces at each 4 foot, defined as : \n"
       "u = [fx1 , fy1, fz1, ... fz4], 12x",
-      bp::init<>(bp::args("self" ), "Initialize the quadruped action model."))
+      bp::init<Eigen::Matrix<double, 3, 1>>(bp::args("self", "offset_CoM"), "Initialize the quadruped action model."))
       .def("calc", &ActionModelQuadrupedNonLinear::calc, bp::args("self", "data", "x", "u"),
           "Compute the next state and cost value.\n\n"
           "It describes the time-discrete evolution of the quadruped system.\n"
