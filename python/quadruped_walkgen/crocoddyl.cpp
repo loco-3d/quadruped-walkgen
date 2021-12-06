@@ -15,7 +15,7 @@ namespace python {
 
 namespace bp = boost::python;
 
-BOOST_PYTHON_MODULE(libquadruped_walkgen_pywrap) {
+BOOST_PYTHON_MODULE(quadruped_walkgen_pywrap) {
   bp::scope().attr("__version__") = crocoddyl::printVersion();
 
   eigenpy::enableEigenPy();

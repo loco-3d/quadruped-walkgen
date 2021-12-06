@@ -1,1 +1,1 @@
-from .libquadruped_walkgen_pywrap import *
+from .quadruped_walkgen_pywrap import *

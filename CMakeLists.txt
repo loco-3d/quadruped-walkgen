@@ -6,7 +6,12 @@ SET(PROJECT_NAME quadruped-walkgen)
 SET(PROJECT_DESCRIPTION "MPC Controller using Crocoddyl")
 SET(PROJECT_URL https://gitlab.laas.fr/${PROJECT_NAMESPACE}/${PROJECT_NAME})
 
-SET(CMAKE_VERBOSE_MAKEFILE True)
+OPTION(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
+
+SET(CMAKE_VERBOSE_MAKEFILE TRUE)
+SET(CUSTOM_HEADER_DIR ${PROJECT_NAME})
+SET(CXX_DISABLE_WERROR TRUE)
+SET(PROJECT_USE_CMAKE_EXPORT TRUE)
 
 # Check if the submodule cmake have been initialized
 IF(NOT EXISTS "${CMAKE_SOURCE_DIR}/cmake/base.cmake")
@@ -19,14 +24,15 @@ INCLUDE(cmake/boost.cmake)
 INCLUDE(cmake/python.cmake)
 
 COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
-#set (CMAKE_CXX_STANDARD 11)
 PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
 #ADD_DEFINITIONS(-DWITH_CODEGEN)
 
-# Disable -Werror on Unix.
-SET(CXX_DISABLE_WERROR True)
-
 ADD_PROJECT_DEPENDENCY(crocoddyl REQUIRED)
+ADD_PROJECT_DEPENDENCY(example-robot-data)
+FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem system)
+FINDPYTHON(REQUIRED)
+SEARCH_FOR_BOOST_PYTHON(REQUIRED)
+STRING(REGEX REPLACE "-" "_" PYTHON_DIR ${PROJECT_NAME})
 
 OPTION(BUILD_WITH_MULTITHREADS "Build the library with the Multithreading support (required OpenMP)" ON)
 IF(BUILD_WITH_MULTITHREADS)
@@ -38,17 +44,46 @@ IF(BUILD_WITH_MULTITHREADS)
   ENDIF()
 ENDIF()
 
-FINDPYTHON(3.6 REQUIRED)
-STRING(REGEX REPLACE "-" "_" PYTHON_DIR ${PROJECT_NAME})
+SET(${PROJECT_NAME}_HEADERS
+  include/${CUSTOM_HEADER_DIR}/quadruped_augmented.hpp
+  include/${CUSTOM_HEADER_DIR}/quadruped_augmented.hxx
+  include/${CUSTOM_HEADER_DIR}/quadruped_augmented_time.hpp
+  include/${CUSTOM_HEADER_DIR}/quadruped_augmented_time.hxx
+  include/${CUSTOM_HEADER_DIR}/quadruped.hpp
+  include/${CUSTOM_HEADER_DIR}/quadruped.hxx
+  include/${CUSTOM_HEADER_DIR}/quadruped_nl.hpp
+  include/${CUSTOM_HEADER_DIR}/quadruped_nl.hxx
+  include/${CUSTOM_HEADER_DIR}/quadruped_step.hpp
+  include/${CUSTOM_HEADER_DIR}/quadruped_step.hxx
+  include/${CUSTOM_HEADER_DIR}/quadruped_step_period.hpp
+  include/${CUSTOM_HEADER_DIR}/quadruped_step_period.hxx
+  include/${CUSTOM_HEADER_DIR}/quadruped_step_time.hpp
+  include/${CUSTOM_HEADER_DIR}/quadruped_step_time.hxx
+  include/${CUSTOM_HEADER_DIR}/quadruped_time.hpp
+  include/${CUSTOM_HEADER_DIR}/quadruped_time.hxx
+  )
 
-SET(BOOST_REQUIERED_COMPONENTS python filesystem system)
-SET(BOOST_COMPONENTS ${BOOST_REQUIERED_COMPONENTS})
-SEARCH_FOR_BOOST()
+SET(${PROJECT_NAME}_SOURCES
+  src/quadruped.cpp
+  src/quadruped_nl.cpp
+  src/quadruped_augmented.cpp
+  src/quadruped_step.cpp
+  src/quadruped_time.cpp
+  src/quadruped_augmented_time.cpp
+  src/quadruped_step_time.cpp
+  )
 
-ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(include/${PROJECT_NAME})
+
+ADD_LIBRARY(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES} ${${PROJECT_NAME}_HEADERS})
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PRIVATE Boost::system Boost::filesystem)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC crocoddyl::crocoddyl)
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC $<INSTALL_INTERFACE:include>)
+IF(SUFFIX_SO_VERSION)
+  SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES SOVERSION ${PROJECT_VERSION})
+ENDIF()
+INSTALL(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)
+
 ADD_SUBDIRECTORY(python)
 
 # Build benchmark
 ADD_SUBDIRECTORY(benchmark)
-
