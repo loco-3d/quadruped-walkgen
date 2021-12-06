@@ -1,11 +1,11 @@
 # coding: utf8
+import sys
+import time
+
 import crocoddyl
 import numpy as np
-import time
-import matplotlib.pylab as plt
-from quadruped_walkgen import *
-import sys
 
+from quadruped_walkgen import ActionModelQuadruped
 
 N = 16  # number of nodes
 T = int(sys.argv[1]) if (len(sys.argv) > 1) else int(5000)  # number of trials
@@ -33,12 +33,10 @@ l_feet = np.array(
     ]
 )  # position of feet in local frame
 
-
 x0 = np.vstack((lC, abg, lV, lW))  # Current state vector
 # The reference state, copy of the initial position,
 xref = np.repeat(x0, N + 1, axis=1)  # Desired future state vectors
 xref[6, :] = 0.0  # Target linear velocity to Vx = 0
-
 
 fsteps = np.array(
     [
@@ -177,7 +175,7 @@ def updateProblem(fsteps, xref, x0, problem):
     fsteps[np.isnan(fsteps)] = 0.0
     j = 0
     k_cum = 0
-    L = []
+    # L = []
 
     # Iterate over all phases of the gait
     # The first column of xref correspond to the current state

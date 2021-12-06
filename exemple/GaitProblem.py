@@ -1,8 +1,10 @@
 # coding: utf8
 
-import crocoddyl
 import numpy as np
-from quadruped_walkgen import *
+
+import crocoddyl
+
+from quadruped_walkgen import ActionModelQuadruped
 
 
 class GaitProblem:
@@ -13,7 +15,7 @@ class GaitProblem:
         # :param nr: dimension of the cost-residual vector (default 1)
 
         # Time step of the solver
-        self.dt = 0.02
+        self.dt = dt
 
         # Period of the MPC
         self.T_mpc = 0.32
@@ -40,6 +42,8 @@ class GaitProblem:
         # Mu, important parameter that need to be changed from the main file
         self.mu = mu
 
+        self.nx = nx
+
     def createProblem(self):
         for i in range(int(self.T_mpc / self.dt)):
             model = ActionModelQuadruped()
@@ -65,7 +69,7 @@ class GaitProblem:
 
         j = 0
         k_cum = 0
-        L = []
+        # L = []
 
         # Iterate over all phases of the gait
         # The first column of xref correspond to the current state

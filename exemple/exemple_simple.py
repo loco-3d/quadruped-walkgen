@@ -1,12 +1,11 @@
 # coding: utf8
 
-
-import crocoddyl
-import numpy as np
 import time
-import matplotlib.pylab as plt
-from GaitProblem import *
 
+import numpy as np
+import matplotlib.pylab as plt
+
+from GaitProblem import GaitProblem
 
 ####################
 #  Initialization  #
@@ -22,7 +21,6 @@ T_mpc = 0.32
 gaitProblem = GaitProblem(mu=0.7)
 gaitProblem.createProblem()
 
-
 # MpcInterface object that contains information about the current state of the robot
 # Change the initial conditions here
 lC = np.array([[0.0, 0.0, 0.2]]).T  # CoM centered and at 20 cm above the ground
@@ -37,12 +35,10 @@ l_feet = np.array(
     ]
 )  # position of feet in local frame
 
-
 x0 = np.vstack((lC, abg, lV, lW))  # Current state vector
 # The reference state, copy of the initial position,
 xref = np.repeat(x0, np.int(T_mpc / dt_mpc) + 1, axis=1)  # Desired future state vectors
 xref[6, :] = 0.0  # Target linear velocity to Vx = 0
-
 
 fsteps = np.array(
     [
@@ -138,7 +134,6 @@ fsteps = np.array(
         ],
     ]
 )
-
 
 #############
 #  Run MPC  #
