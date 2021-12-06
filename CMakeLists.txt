@@ -87,3 +87,5 @@ ADD_SUBDIRECTORY(python)
 
 # Build benchmark
 ADD_SUBDIRECTORY(benchmark)
+
+INSTALL(FILES package.xml DESTINATION share/${PROJECT_NAME})
