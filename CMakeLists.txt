@@ -4,7 +4,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 SET(PROJECT_NAMESPACE loco-3d)
 SET(PROJECT_NAME quadruped-walkgen)
 SET(PROJECT_DESCRIPTION "MPC Controller using Crocoddyl")
-SET(PROJECT_URL https://gitlab.laas.fr/${PROJECT_NAMESPACE}/${PROJECT_NAME})
+SET(PROJECT_URL "https://github.com/${PROJECT_NAMESPACE}/${PROJECT_NAME}")
 
 OPTION(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
 

@@ -5,7 +5,7 @@ The quadruped action model class is mainly based on the unicycle example class w
 
 To install :
 ```bash
-git clone https://gitlab.laas.fr/loco-3d/quadruped-walkgen.git
+git clone https://github.com/loco-3d/quadruped-walkgen.git
 git checkout devel1
 git submodule update --init
 
