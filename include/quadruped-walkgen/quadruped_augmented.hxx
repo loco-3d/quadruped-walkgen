@@ -38,7 +38,7 @@ ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl(typen
   stop_weights_.setConstant(Scalar(1));
   // pshoulder_ << Scalar(0.1946), Scalar(0.15005), Scalar(0.1946), Scalar(-0.15005), Scalar(-0.1946), Scalar(0.15005),
   //     Scalar(-0.1946), Scalar(-0.15005);
-  pshoulder_0 << Scalar(0.1946), Scalar(0.1946), Scalar(-0.1946), Scalar(-0.1946), Scalar(0.14695), Scalar(-0.14695),
+  pshoulder_0 << Scalar(0.18), Scalar(0.18), Scalar(-0.21), Scalar(-0.21), Scalar(0.14695), Scalar(-0.14695),
       Scalar(0.14695), Scalar(-0.14695);
   // pshoulder_tmp.setZero();
   // pcentrifugal_tmp_1.setZero();
@@ -68,7 +68,7 @@ ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl(typen
   // bool to add heuristic for foot position
   centrifugal_term = true;
   symmetry_term = true;
-  T_gait = Scalar(0.32);
+  T_gait = Scalar(0.48);
 
   // // Used for shoulder height weight
   // pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),  Scalar(-0.1946) ,

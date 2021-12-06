@@ -11,12 +11,12 @@ ActionModelQuadrupedStepTpl<Scalar>::ActionModelQuadrupedStepTpl()
   state_weights_ << Scalar(1.), Scalar(1.), Scalar(150.), Scalar(35.), Scalar(30.), Scalar(8.), Scalar(20.),
       Scalar(20.), Scalar(15.), Scalar(4.), Scalar(4.), Scalar(8.);
   
-  pheuristic_ << Scalar(0.1946), Scalar(0.15005), Scalar(0.1946), Scalar(-0.15005), Scalar(-0.1946), Scalar(0.15005),
-      Scalar(-0.1946), Scalar(-0.15005);
+  pheuristic_ << Scalar(0.18), Scalar(0.15005), Scalar(0.18), Scalar(-0.15005), Scalar(-0.21), Scalar(0.15005),
+      Scalar(-0.21), Scalar(-0.15005);
   
   centrifugal_term = true;
   symmetry_term = true;
-  T_gait = Scalar(0.32);
+  T_gait = Scalar(0.48);
 
   step_weights_.setConstant(Scalar(1));
   heuristic_weights_.setConstant(Scalar(1));
