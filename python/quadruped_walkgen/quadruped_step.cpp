@@ -2,8 +2,7 @@
 #include "core.hpp"
 #include "action-base.hpp"
 
-
-namespace quadruped_walkgen  {
+namespace quadruped_walkgen {
 namespace python {
 
 void exposeActionQuadrupedStep() {
@@ -17,76 +16,107 @@ void exposeActionQuadrupedStep() {
       "x = [x , y, z, rool, pitch, yaw, Vx, Vy, Vz, Vrool, Vpitch, Vyaw] , 12x \n\n"
       "and u is the groud reaction forces at each 4 foot, defined as : \n"
       "u = [fx1 , fy1, fz1, ... fz4], 12x",
-      bp::init<>(bp::args("self" ), "Initialize the quadruped action model."))
+      bp::init<>(bp::args("self"), "Initialize the quadruped action model."))
       .def("calc", &ActionModelQuadrupedStep::calc, bp::args("self", "data", "x", "u"),
-          "Compute the next state and cost value.\n\n"
-          "It describes the time-discrete evolution of the quadruped system.\n"
-          "Additionally it computes the cost value associated to this discrete\n"
-          "state and control pair.\n"
-          ":param data: action data\n"
-          ":param x: time-discrete state vector\n"
-          ":param u: time-discrete control input")
+           "Compute the next state and cost value.\n\n"
+           "It describes the time-discrete evolution of the quadruped system.\n"
+           "Additionally it computes the cost value associated to this discrete\n"
+           "state and control pair.\n"
+           ":param data: action data\n"
+           ":param x: time-discrete state vector\n"
+           ":param u: time-discrete control input")
       .def<void (ActionModelQuadrupedStep::*)(const boost::shared_ptr<ActionDataAbstract>&,
-                                         const Eigen::Ref<const Eigen::VectorXd>&)>("calc", &ActionModelAbstract::calc,
-                                                                                    bp::args("self", "data", "x"))
+                                              const Eigen::Ref<const Eigen::VectorXd>&)>(
+          "calc", &ActionModelAbstract::calc, bp::args("self", "data", "x"))
       .def("calcDiff", &ActionModelQuadrupedStep::calcDiff, bp::args("self", "data", "x", "u"),
-          "Compute the derivatives of the quadruped dynamics and cost functions.\n\n"
-          "It computes the partial derivatives of the quadruped system and the\n"
-          "cost function. It assumes that calc has been run first.\n"
-          "This function builds a quadratic approximation of the\n"
-          "action model (i.e. dynamical system and cost function).\n"
-          ":param data: action data\n"
-          ":param x: time-discrete state vector\n"
-          ":param u: time-discrete control input\n")
+           "Compute the derivatives of the quadruped dynamics and cost functions.\n\n"
+           "It computes the partial derivatives of the quadruped system and the\n"
+           "cost function. It assumes that calc has been run first.\n"
+           "This function builds a quadratic approximation of the\n"
+           "action model (i.e. dynamical system and cost function).\n"
+           ":param data: action data\n"
+           ":param x: time-discrete state vector\n"
+           ":param u: time-discrete control input\n")
       .def<void (ActionModelQuadrupedStep::*)(const boost::shared_ptr<ActionDataAbstract>&,
-                                         const Eigen::Ref<const Eigen::VectorXd>&)>(
+                                              const Eigen::Ref<const Eigen::VectorXd>&)>(
           "calcDiff", &ActionModelAbstract::calcDiff, bp::args("self", "data", "x"))
       .def("createData", &ActionModelQuadrupedStep::createData, bp::args("self"), "Create the quadruped action data.")
-      .def("updateModel", &ActionModelQuadrupedStep::update_model, bp::args("self" , "l_feet", "xref", "S", "position", "velocity", "acceleration", "oRh", "oth","Dt"),
-       "Update the quadruped model depending on the position of the foot in the local frame\n\n"
-       ":param l_feet : 3x4, Matrix representing the position of the foot in the local frame \n "
-       "                Each colum represents the position of one foot : x,y,z"
-       ":param xref : 12x1, Vector representing the reference state."
-       ":param S : 4x1, Vector representing the foot in contact with the ground."
-       "                S = [1 0 0 1] --> Foot 1 and 4 in contact.")  
+      .def("updateModel", &ActionModelQuadrupedStep::update_model,
+           bp::args("self", "l_feet", "xref", "S", "position", "velocity", "acceleration", "oRh", "oth", "Dt"),
+           "Update the quadruped model depending on the position of the foot in the local frame\n\n"
+           ":param l_feet : 3x4, Matrix representing the position of the foot in the local frame \n "
+           "                Each colum represents the position of one foot : x,y,z"
+           ":param xref : 12x1, Vector representing the reference state."
+           ":param S : 4x1, Vector representing the foot in contact with the ground."
+           "                S = [1 0 0 1] --> Foot 1 and 4 in contact.")
 
-      .def("set_sample_feet_traj", &ActionModelQuadrupedStep::set_sample_feet_traj, bp::args("self" , "n_sampling"),
-       "Modify the number of sample to approximate the feet polynomial trajectories \n\n"
-       ":param n_sampling : int, Number of sample")  
+      .def("set_sample_feet_traj", &ActionModelQuadrupedStep::set_sample_feet_traj, bp::args("self", "n_sampling"),
+           "Modify the number of sample to approximate the feet polynomial trajectories \n\n"
+           ":param n_sampling : int, Number of sample")
       .add_property("stateWeights",
                     bp::make_function(&ActionModelQuadrupedStep::get_state_weights, bp::return_internal_reference<>()),
                     bp::make_function(&ActionModelQuadrupedStep::set_state_weights), "Weights on the state vector")
-      .add_property("heuristicWeights",
-                    bp::make_function(&ActionModelQuadrupedStep::get_heuristic_weights, bp::return_internal_reference<>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_heuristic_weights), "Weights on the heuristic term")
+      .add_property(
+          "heuristicWeights",
+          bp::make_function(&ActionModelQuadrupedStep::get_heuristic_weights, bp::return_internal_reference<>()),
+          bp::make_function(&ActionModelQuadrupedStep::set_heuristic_weights), "Weights on the heuristic term")
       .add_property("stepWeights",
                     bp::make_function(&ActionModelQuadrupedStep::get_step_weights, bp::return_internal_reference<>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_step_weights), "Weights on the command norm")    
-      .add_property("symmetry_term", bp::make_function(&ActionModelQuadrupedStep::get_symmetry_term, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_symmetry_term) , "symmetry term for the foot position heuristic")
-      .add_property("centrifugal_term", bp::make_function(&ActionModelQuadrupedStep::get_centrifugal_term, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_centrifugal_term) , "centrifugal term for the foot position heuristic") 
-      .add_property("T_gait", bp::make_function(&ActionModelQuadrupedStep::get_T_gait, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_T_gait) , "Gait period, used to compute the symmetry term")  
-      .add_property("is_acc_activated", bp::make_function(&ActionModelQuadrupedStep::get_acc_activated, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_acc_activated) , "Boolean whereas the cost on the acceleration is activated") 
-      .add_property("acc_limit", bp::make_function(&ActionModelQuadrupedStep::get_acc_lim, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_acc_lim) , "Vector x2 containing the limit acceleration in x and y axis where the quadratic cost is activated")  
-      .add_property("acc_weight", bp::make_function(&ActionModelQuadrupedStep::get_acc_weight, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_acc_weight) , "Weight to penalize the acceleration of the flying feet, (float)")
-      .add_property("is_vel_activated", bp::make_function(&ActionModelQuadrupedStep::get_vel_activated, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_vel_activated) , "Boolean whereas the cost on the velocity is activated") 
-      .add_property("vel_limit", bp::make_function(&ActionModelQuadrupedStep::get_vel_lim, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_vel_lim) , "Vector x2 containing the limit velocity in x and y axis where the quadratic cost is activated")  
-      .add_property("vel_weight", bp::make_function(&ActionModelQuadrupedStep::get_vel_weight, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_vel_weight) , "Weight to penalize the velocity of the flying feet, (float)")
-      .add_property("jerk_weight", bp::make_function(&ActionModelQuadrupedStep::get_jerk_weight, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_jerk_weight) , "Weight to penalize the jerk of the flying feet, (float)")  
-      .add_property("is_jerk_activated", bp::make_function(&ActionModelQuadrupedStep::get_jerk_activated, bp::return_value_policy<bp::return_by_value>()),
-                    bp::make_function(&ActionModelQuadrupedStep::set_jerk_activated) , "Boolean whereas the cost on the jerk is activated") 
-         ;
-     
-     
+                    bp::make_function(&ActionModelQuadrupedStep::set_step_weights), "Weights on the command norm")
+      .add_property("symmetry_term",
+                    bp::make_function(&ActionModelQuadrupedStep::get_symmetry_term,
+                                      bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedStep::set_symmetry_term),
+                    "symmetry term for the foot position heuristic")
+      .add_property("centrifugal_term",
+                    bp::make_function(&ActionModelQuadrupedStep::get_centrifugal_term,
+                                      bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedStep::set_centrifugal_term),
+                    "centrifugal term for the foot position heuristic")
+      .add_property(
+          "T_gait",
+          bp::make_function(&ActionModelQuadrupedStep::get_T_gait, bp::return_value_policy<bp::return_by_value>()),
+          bp::make_function(&ActionModelQuadrupedStep::set_T_gait), "Gait period, used to compute the symmetry term")
+      .add_property("is_acc_activated",
+                    bp::make_function(&ActionModelQuadrupedStep::get_acc_activated,
+                                      bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedStep::set_acc_activated),
+                    "Boolean whereas the cost on the acceleration is activated")
+      .add_property(
+          "acc_limit",
+          bp::make_function(&ActionModelQuadrupedStep::get_acc_lim, bp::return_value_policy<bp::return_by_value>()),
+          bp::make_function(&ActionModelQuadrupedStep::set_acc_lim),
+          "Vector x2 containing the limit acceleration in x and y axis where the quadratic cost is activated")
+      .add_property(
+          "acc_weight",
+          bp::make_function(&ActionModelQuadrupedStep::get_acc_weight, bp::return_value_policy<bp::return_by_value>()),
+          bp::make_function(&ActionModelQuadrupedStep::set_acc_weight),
+          "Weight to penalize the acceleration of the flying feet, (float)")
+      .add_property("is_vel_activated",
+                    bp::make_function(&ActionModelQuadrupedStep::get_vel_activated,
+                                      bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedStep::set_vel_activated),
+                    "Boolean whereas the cost on the velocity is activated")
+      .add_property(
+          "vel_limit",
+          bp::make_function(&ActionModelQuadrupedStep::get_vel_lim, bp::return_value_policy<bp::return_by_value>()),
+          bp::make_function(&ActionModelQuadrupedStep::set_vel_lim),
+          "Vector x2 containing the limit velocity in x and y axis where the quadratic cost is activated")
+      .add_property(
+          "vel_weight",
+          bp::make_function(&ActionModelQuadrupedStep::get_vel_weight, bp::return_value_policy<bp::return_by_value>()),
+          bp::make_function(&ActionModelQuadrupedStep::set_vel_weight),
+          "Weight to penalize the velocity of the flying feet, (float)")
+      .add_property("jerk_weight",
+                    bp::make_function(&ActionModelQuadrupedStep::get_jerk_weight,
+                                      bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedStep::set_jerk_weight),
+                    "Weight to penalize the jerk of the flying feet, (float)")
+      .add_property("is_jerk_activated",
+                    bp::make_function(&ActionModelQuadrupedStep::get_jerk_activated,
+                                      bp::return_value_policy<bp::return_by_value>()),
+                    bp::make_function(&ActionModelQuadrupedStep::set_jerk_activated),
+                    "Boolean whereas the cost on the jerk is activated");
 
   bp::register_ptr_to_python<boost::shared_ptr<ActionDataQuadrupedStep> >();
 
@@ -96,14 +126,9 @@ void exposeActionQuadrupedStep() {
       "The quadruped data, apart of common one, contains the cost residuals used\n"
       "for the computation of calc and calcDiff.",
       bp::init<ActionModelQuadrupedStep*>(bp::args("self", "model"),
-                                     "Create quadruped data.\n\n"
-                                     ":param model: quadruped action model"));
-
+                                          "Create quadruped data.\n\n"
+                                          ":param model: quadruped action model"));
 }
 
-
-
- 
-
-}
-}
+}  // namespace python
+}  // namespace quadruped_walkgen

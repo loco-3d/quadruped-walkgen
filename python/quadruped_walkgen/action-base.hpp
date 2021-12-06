@@ -57,6 +57,6 @@ class ActionModelAbstract_wrap : public ActionModelAbstract, public bp::wrapper<
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(ActionModel_quasiStatic_wraps, ActionModelAbstract::quasiStatic_x, 2, 4)
 
 }  // namespace python
-}  // namespace crocoddyl
+}  // namespace quadruped_walkgen
 
 #endif  // BINDINGS_PYTHON_CROCODDYL_CORE_ACTION_BASE_HPP_

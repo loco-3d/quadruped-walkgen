@@ -15,13 +15,13 @@ void exposeCore() {
   exposeActionAbstract();
   exposeActionQuadruped();
   exposeActionQuadrupedNonLinear();
-  exposeActionQuadrupedAugmented() ; 
-  exposeActionQuadrupedStep() ; 
-  exposeActionQuadrupedAugmentedTime() ; 
-  exposeActionQuadrupedStepTime() ;
-  exposeActionQuadrupedTime() ;
-  exposeActionQuadrupedStepPeriod() ; 
+  exposeActionQuadrupedAugmented();
+  exposeActionQuadrupedStep();
+  exposeActionQuadrupedAugmentedTime();
+  exposeActionQuadrupedStepTime();
+  exposeActionQuadrupedTime();
+  exposeActionQuadrupedStepPeriod();
 }
 
 }  // namespace python
-}  // namespace crocoddyl
+}  // namespace quadruped_walkgen

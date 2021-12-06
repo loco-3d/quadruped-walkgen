@@ -17,7 +17,7 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
   typedef crocoddyl::ActionDataAbstractTpl<Scalar> ActionDataAbstract;
   typedef crocoddyl::ActionModelAbstractTpl<Scalar> Base;
   typedef crocoddyl::MathBaseTpl<Scalar> MathBase;
-  
+
   ActionModelQuadrupedStepTimeTpl();
   ~ActionModelQuadrupedStepTimeTpl();
 
@@ -39,19 +39,19 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
   const typename Eigen::Matrix<Scalar, 8, 1>& get_heuristic_weights() const;
   void set_heuristic_weights(const typename MathBase::VectorXs& weights);
 
-  // Update the model depending if the foot in contact with the ground 
+  // Update the model depending if the foot in contact with the ground
   // or the new lever arms
   void update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& velocity,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& acceleration,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
-                    const Eigen::Ref<const typename MathBase::VectorXs>& S ) ;
+                    const Eigen::Ref<const typename MathBase::VectorXs>& S);
 
-  const bool& get_symmetry_term() const ;
-  void set_symmetry_term(const bool& sym_term) ;
+  const bool& get_symmetry_term() const;
+  void set_symmetry_term(const bool& sym_term);
 
-  const bool& get_centrifugal_term() const ;
-  void set_centrifugal_term(const bool& cent_term) ;
+  const bool& get_centrifugal_term() const;
+  void set_centrifugal_term(const bool& cent_term);
 
   const Scalar& get_T_gait() const;
   void set_T_gait(const Scalar& T_gait_);
@@ -65,11 +65,11 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
   const Scalar& get_speed_weight() const;
   void set_speed_weight(const Scalar& weight_);
 
-  const bool& get_first_step() const ;
-  void set_first_step(const bool& first) ;
+  const bool& get_first_step() const;
+  void set_first_step(const bool& first);
 
   // get cost
-  const typename Eigen::Matrix<Scalar, 7, 1 >& get_cost() const;  
+  const typename Eigen::Matrix<Scalar, 7, 1>& get_cost() const;
 
  protected:
   using Base::has_control_limits_;  //!< Indicates whether any of the control limits
@@ -79,71 +79,67 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
   using Base::u_lb_;                //!< Lower control limits
   using Base::u_ub_;                //!< Upper control limits
   using Base::unone_;               //!< Neutral state
- 
- 
+
  private:
-  Scalar T_gait ;
-  Scalar speed_weight ;
-  Scalar nb_nodes ; 
-  Scalar vlim ; 
-  Scalar beta_lim ;
+  Scalar T_gait;
+  Scalar speed_weight;
+  Scalar nb_nodes;
+  Scalar vlim;
+  Scalar beta_lim;
   int nb_alpha_;
-  bool centrifugal_term ; 
-  bool symmetry_term ; 
+  bool centrifugal_term;
+  bool symmetry_term;
   // indicates whether it t the 1st step, otherwise the cost function is much simpler (acc, speed = 0)
-  bool first_step ; 
+  bool first_step;
 
   typename Eigen::Matrix<Scalar, 12, 1> state_weights_;
-  typename Eigen::Matrix<Scalar, 4, 1> step_weights_;  
+  typename Eigen::Matrix<Scalar, 4, 1> step_weights_;
   typename Eigen::Matrix<Scalar, 8, 1> heuristicWeights;
-  typename MathBase::Matrix3s R_tmp ;
+  typename MathBase::Matrix3s R_tmp;
 
-  // typename  Eigen::Array<Scalar, 3, 1 > alpha ; 
-  // typename  Eigen::Array<Scalar, 3, 4 > alpha2 ; 
-  // typename  Eigen::Array<Scalar, 3, 3 > b_coeff ; 
-  typename MathBase::ArrayXs alpha; 
-  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> alpha2; 
-  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff; 
+  // typename  Eigen::Array<Scalar, 3, 1 > alpha ;
+  // typename  Eigen::Array<Scalar, 3, 4 > alpha2 ;
+  // typename  Eigen::Array<Scalar, 3, 3 > b_coeff ;
+  typename MathBase::ArrayXs alpha;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> alpha2;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff_x0;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff_y0;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff_x1;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff_y1;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff_x2;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> b_coeff_y2;
-  
-  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_x ; 
-  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_y ; 
-  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_2 ;
-  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_bool ; 
 
-  // typename  Eigen::Array<Scalar, 3, 12 > b_coeff2 ; 
-  typename  Eigen::Matrix<Scalar, 3, 4> lfeet ;
-  // typename Eigen::Array<Scalar, 3, 4 > rub_max_first ; 
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_x;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_y;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_2;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_bool;
+
+  // typename  Eigen::Array<Scalar, 3, 12 > b_coeff2 ;
+  typename Eigen::Matrix<Scalar, 3, 4> lfeet;
+  // typename Eigen::Array<Scalar, 3, 4 > rub_max_first ;
   // typename Eigen::Array<Scalar, 3, 2 > rub_max_first_2 ;
-  // typename Eigen::Array<Scalar, 3, 2 > rub_max_bool_first ; 
-  
-  
-  typename Eigen::Matrix<Scalar, 8, 8 > B;
+  // typename Eigen::Array<Scalar, 3, 2 > rub_max_bool_first ;
 
-  typename MathBase::MatrixXs xref_;  
-  typename MathBase::VectorXs S_; // Containing the flying feet
-  typename Eigen::Matrix<Scalar, 8 , 1 > pheuristic_;  
+  typename Eigen::Matrix<Scalar, 8, 8> B;
+
+  typename MathBase::MatrixXs xref_;
+  typename MathBase::VectorXs S_;  // Containing the flying feet
+  typename Eigen::Matrix<Scalar, 8, 1> pheuristic_;
 
   // Compute heuristic inside update Model
-  // typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_0;  
-  // typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_tmp;  
-  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp; 
-  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_1; 
-  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_2; 
+  // typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_0;
+  // typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_tmp;
+  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp;
+  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_1;
+  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_2;
 
-  typename Eigen::Matrix<Scalar, 4, 1 > rub_max_ ; 
-  typename Eigen::Matrix<Scalar, 4, 1 > rub_max_bool ; 
+  typename Eigen::Matrix<Scalar, 4, 1> rub_max_;
+  typename Eigen::Matrix<Scalar, 4, 1> rub_max_bool;
 
-   // Log cost
-  bool log_cost ; 
-  typename Eigen::Matrix<Scalar, 7, 1> cost_ ; 
-
-
+  // Log cost
+  bool log_cost;
+  typename Eigen::Matrix<Scalar, 7, 1> cost_;
 };
 
 template <typename _Scalar>
@@ -165,11 +161,9 @@ struct ActionDataQuadrupedStepTimeTpl : public crocoddyl::ActionDataAbstractTpl<
   using Base::xnext;
 
   template <template <typename Scalar> class Model>
-  explicit ActionDataQuadrupedStepTimeTpl(Model<Scalar>* const model) : crocoddyl::ActionDataAbstractTpl<Scalar>(model) {}
+  explicit ActionDataQuadrupedStepTimeTpl(Model<Scalar>* const model)
+      : crocoddyl::ActionDataAbstractTpl<Scalar>(model) {}
 };
-
-  
- 
 
 /* --- Details -------------------------------------------------------------- */
 /* --- Details -------------------------------------------------------------- */
@@ -178,9 +172,8 @@ struct ActionDataQuadrupedStepTimeTpl : public crocoddyl::ActionDataAbstractTpl<
 typedef ActionModelQuadrupedStepTimeTpl<double> ActionModelQuadrupedStepTime;
 typedef ActionDataQuadrupedStepTimeTpl<double> ActionDataQuadrupedStepTime;
 
-}
+}  // namespace quadruped_walkgen
 
 #include "quadruped_step_time.hxx"
-
 
 #endif

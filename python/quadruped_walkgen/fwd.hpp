@@ -21,6 +21,6 @@ namespace bp = boost::python;
 void exposeCore();
 
 }  // namespace python
-}  // namespace crocoddyl
+}  // namespace quadruped_walkgen
 
 #endif  // BINDINGS_PYTHON_QUADRUPED_WALKGEN_FWD_HPP_

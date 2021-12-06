@@ -18,17 +18,17 @@ namespace bp = boost::python;
 
 void exposeActionAbstract();
 void exposeActionQuadruped();
-void exposeActionQuadrupedNonLinear() ; 
-void exposeActionQuadrupedAugmented() ; 
-void exposeActionQuadrupedStep() ; 
-void exposeActionQuadrupedAugmentedTime() ; 
-void exposeActionQuadrupedStepTime() ; 
-void exposeActionQuadrupedTime() ; 
-void exposeActionQuadrupedStepPeriod() ; 
+void exposeActionQuadrupedNonLinear();
+void exposeActionQuadrupedAugmented();
+void exposeActionQuadrupedStep();
+void exposeActionQuadrupedAugmentedTime();
+void exposeActionQuadrupedStepTime();
+void exposeActionQuadrupedTime();
+void exposeActionQuadrupedStepPeriod();
 
 void exposeCore();
 
 }  // namespace python
-}  // namespace crocoddyl
+}  // namespace quadruped_walkgen
 
 #endif  // BINDINGS_PYTHON_QUADRUPED_WALKGEN_CORE_HPP_

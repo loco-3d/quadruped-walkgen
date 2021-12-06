@@ -130,7 +130,6 @@ class ActionModelQuadrupedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar
   typename Eigen::Matrix<Scalar, 3, 1> offset_com;
   Scalar sh_weight;
   Scalar sh_hlim;
-
 };
 
 template <typename _Scalar>

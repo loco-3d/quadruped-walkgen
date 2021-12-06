@@ -49,8 +49,7 @@ class ActionModelQuadrupedStepTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
                     const Eigen::Ref<const typename MathBase::MatrixXs>& acceleration,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& jerk,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& oRh,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& oTh,
-                    const Scalar& delta_T);
+                    const Eigen::Ref<const typename MathBase::MatrixXs>& oTh, const Scalar& delta_T);
 
   const bool& get_symmetry_term() const;
   void set_symmetry_term(const bool& sym_term);
@@ -117,29 +116,29 @@ class ActionModelQuadrupedStepTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
   // typename Eigen::Matrix<Scalar, 3, 1> pcentrifugal_tmp_1;
   // typename Eigen::Matrix<Scalar, 3, 1> pcentrifugal_tmp_2;
 
-  // Cost on the acceleration of the feet :  
+  // Cost on the acceleration of the feet :
   int N_sampling;
-  bool is_acc_activated_;  // Boolean to activate the cost on the acceleration of the feet
-  Scalar acc_weight_; // Weight on the acceleration cost
-  typename Eigen::Matrix<Scalar,2,1> acc_lim_; // Maximum acceleration allowed on x and y axis
-  typename Eigen::Matrix<Scalar,4,1> S_; // Containing the moving feet
+  bool is_acc_activated_;                         // Boolean to activate the cost on the acceleration of the feet
+  Scalar acc_weight_;                             // Weight on the acceleration cost
+  typename Eigen::Matrix<Scalar, 2, 1> acc_lim_;  // Maximum acceleration allowed on x and y axis
+  typename Eigen::Matrix<Scalar, 4, 1> S_;        // Containing the moving feet
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> delta_;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> gamma_;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> alpha_;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> beta_x_;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> beta_y_;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> tmp_ones_;
-  typename Eigen::Array<Scalar, 3, 4> position_; 
+  typename Eigen::Array<Scalar, 3, 4> position_;
 
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_accx_max_;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_accy_max_;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_accx_max_bool_;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_accy_max_bool_;
 
-  // Cost on the velocity of the feet :  
-  bool is_vel_activated_;  // Boolean to activate the cost on the velocity of the feet
-  Scalar vel_weight_; // Weight on the velocity cost
-  typename Eigen::Matrix<Scalar,2,1> vel_lim_; // Maximum velocity allowed on x and y axis
+  // Cost on the velocity of the feet :
+  bool is_vel_activated_;                         // Boolean to activate the cost on the velocity of the feet
+  Scalar vel_weight_;                             // Weight on the velocity cost
+  typename Eigen::Matrix<Scalar, 2, 1> vel_lim_;  // Maximum velocity allowed on x and y axis
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> gamma_v;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> alpha_v;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> beta_x_v;
@@ -150,19 +149,17 @@ class ActionModelQuadrupedStepTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_velx_max_bool_;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_vely_max_bool_;
 
-  // Cost on the jerk of the feet 
+  // Cost on the jerk of the feet
   bool is_jerk_activated_;
   Scalar jerk_weight_;
   Scalar alpha_j;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> beta_j;
-  typename Eigen::Array<Scalar, 3, 4> jerk_; 
-
+  typename Eigen::Array<Scalar, 3, 4> jerk_;
 
   typename Eigen::Matrix<Scalar, 2, 4> rb_jerk_;
 
-  typename Eigen::Matrix<Scalar, 3, 3> oRh_;  
-  typename Eigen::Matrix<Scalar, 3, 1> oTh_;  
-
+  typename Eigen::Matrix<Scalar, 3, 3> oRh_;
+  typename Eigen::Matrix<Scalar, 3, 1> oTh_;
 };
 
 template <typename _Scalar>

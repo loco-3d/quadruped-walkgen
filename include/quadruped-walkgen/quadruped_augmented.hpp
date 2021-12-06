@@ -18,7 +18,8 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   typedef crocoddyl::ActionModelAbstractTpl<Scalar> Base;
   typedef crocoddyl::MathBaseTpl<Scalar> MathBase;
 
-  ActionModelQuadrupedAugmentedTpl(typename Eigen::Matrix<Scalar, 3, 1> offset_CoM = Eigen::Matrix<Scalar, 3, 1>::Zero());
+  ActionModelQuadrupedAugmentedTpl(
+      typename Eigen::Matrix<Scalar, 3, 1> offset_CoM = Eigen::Matrix<Scalar, 3, 1>::Zero());
   ~ActionModelQuadrupedAugmentedTpl();
 
   virtual void calc(const boost::shared_ptr<ActionDataAbstract>& data,
@@ -115,10 +116,10 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   Scalar T_gait;
   bool centrifugal_term;
   bool symmetry_term;
-  bool relative_forces; 
-  
+  bool relative_forces;
+
   // Using the reference trajectory (true) or the predicted trajectory (false) of the CoM
-  // to compute the distance shoulder / contact point. 
+  // to compute the distance shoulder / contact point.
   bool shoulder_reference_position;
 
   typename Eigen::Matrix<Scalar, 12, 1> uref_;

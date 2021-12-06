@@ -87,6 +87,6 @@ struct list_to_vector {
 };
 
 }  // namespace python
-}  // namespace crocoddyl
+}  // namespace quadruped_walkgen
 
 #endif  // BINDINGS_PYTHON_QUADRUPED_WALKGEN_VECTOR_CONVERTER_HPP_

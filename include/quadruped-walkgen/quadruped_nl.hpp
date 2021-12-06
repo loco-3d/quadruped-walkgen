@@ -18,7 +18,8 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
   typedef crocoddyl::ActionModelAbstractTpl<Scalar> Base;
   typedef crocoddyl::MathBaseTpl<Scalar> MathBase;
 
-  ActionModelQuadrupedNonLinearTpl(typename Eigen::Matrix<Scalar, 3, 1> offset_CoM = Eigen::Matrix<Scalar, 3, 1>::Zero());
+  ActionModelQuadrupedNonLinearTpl(
+      typename Eigen::Matrix<Scalar, 3, 1> offset_CoM = Eigen::Matrix<Scalar, 3, 1>::Zero());
   ~ActionModelQuadrupedNonLinearTpl();
 
   virtual void calc(const boost::shared_ptr<ActionDataAbstract>& data,

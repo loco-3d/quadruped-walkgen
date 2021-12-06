@@ -5,7 +5,8 @@
 
 namespace quadruped_walkgen {
 template <typename Scalar>
-ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl(typename Eigen::Matrix<Scalar, 3, 1> offset_CoM)
+ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl(
+    typename Eigen::Matrix<Scalar, 3, 1> offset_CoM)
     : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(20), 12, 32) {
   // Relative forces to compute the norm mof the command
   relative_forces = true;
@@ -78,9 +79,9 @@ ActionModelQuadrupedAugmentedTpl<Scalar>::ActionModelQuadrupedAugmentedTpl(typen
   sh_ub_max_.setZero();
   psh.setZero();
   pheuristic_.setZero();
-  offset_com = offset_CoM; // x, y, z offset
+  offset_com = offset_CoM;  // x, y, z offset
 
-  shoulder_reference_position = false; // Using predicted trajectory of the CoM
+  shoulder_reference_position = false;  // Using predicted trajectory of the CoM
 }
 
 template <typename Scalar>
@@ -112,21 +113,25 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calc(
       B.block(9, 3 * i, 3, 3) << dt_ * R * R_tmp;
 
       // Compute pdistance of the shoulder wrt contact point
-      if (shoulder_reference_position){
+      if (shoulder_reference_position) {
         // Ref vector as reference for the shoulder trajectory, roll and pitch at first
-        psh.block(0, i, 3, 1) << xref_(0,0) - offset_com(0, 0) + pshoulder_0(0, i)*cos(xref_(5, 0)) - pshoulder_0(1, i)*sin(xref_(5, 0)) - x(12 + 2 * i),
-                                 xref_(1,0) - offset_com(1, 0) + pshoulder_0(0, i)*sin(xref_(5, 0)) + pshoulder_0(1, i)*cos(xref_(5, 0)) - x(12 + 2 * i + 1),
-                                 xref_(2,0) - offset_com(2, 0);
-      } else{
+        psh.block(0, i, 3, 1) << xref_(0, 0) - offset_com(0, 0) + pshoulder_0(0, i) * cos(xref_(5, 0)) -
+                                     pshoulder_0(1, i) * sin(xref_(5, 0)) - x(12 + 2 * i),
+            xref_(1, 0) - offset_com(1, 0) + pshoulder_0(0, i) * sin(xref_(5, 0)) +
+                pshoulder_0(1, i) * cos(xref_(5, 0)) - x(12 + 2 * i + 1),
+            xref_(2, 0) - offset_com(2, 0);
+      } else {
         // psh.block(0, i, 3, 1) << x(0) + pshoulder_0(0, i) - pshoulder_0(1, i) * x(5) - x(12 + 2 * i),
         //                          x(1) + pshoulder_0(1, i) + pshoulder_0(0, i) * x(5) - x(12 + 2 * i + 1),
         //                          x(2) - offset_com + pshoulder_0(1, i) * x(3) - pshoulder_0(0, i) * x(4);
         // Correction, no approximation for yaw
-        psh.block(0, i, 3, 1) << x(0) - offset_com(0, 0) + pshoulder_0(0, i) * cos(x(5)) - pshoulder_0(1, i) * sin(x(5)) - x(12 + 2 * i),
-                                 x(1) - offset_com(1, 0) + pshoulder_0(0, i) * sin(x(5)) + pshoulder_0(1, i) * cos(x(5)) - x(12 + 2 * i + 1),
-                                 x(2) - offset_com(2, 0) + pshoulder_0(1, i) * x(3) - pshoulder_0(0, i) * x(4);
+        psh.block(0, i, 3, 1) << x(0) - offset_com(0, 0) + pshoulder_0(0, i) * cos(x(5)) -
+                                     pshoulder_0(1, i) * sin(x(5)) - x(12 + 2 * i),
+            x(1) - offset_com(1, 0) + pshoulder_0(0, i) * sin(x(5)) + pshoulder_0(1, i) * cos(x(5)) -
+                x(12 + 2 * i + 1),
+            x(2) - offset_com(2, 0) + pshoulder_0(1, i) * x(3) - pshoulder_0(0, i) * x(4);
       }
-      
+
     } else {
       // Compute pdistance of the shoulder wrt contact point
       psh.block(0, i, 3, 1).setZero();
@@ -148,17 +153,16 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calc(
 
   // Friction cone
   for (int i = 0; i < 4; i = i + 1) {
-    Fa_x_u.segment(6 * i, 6) << u(3 * i) - mu * u(3 * i + 2),     -u(3 * i) - mu * u(3 * i + 2),
-                                u(3 * i + 1) - mu * u(3 * i + 2), -u(3 * i + 1) - mu * u(3 * i + 2), 
-                                -u(3 * i + 2), u(3 * i + 2);
+    Fa_x_u.segment(6 * i, 6) << u(3 * i) - mu * u(3 * i + 2), -u(3 * i) - mu * u(3 * i + 2),
+        u(3 * i + 1) - mu * u(3 * i + 2), -u(3 * i + 1) - mu * u(3 * i + 2), -u(3 * i + 2), u(3 * i + 2);
   }
   rub_max_ = (Fa_x_u - ub).cwiseMax(Scalar(0.));
 
   // Shoulder height weight
   sh_ub_max_ << Scalar(0.5) * sh_weight(0) * (psh.block(0, 0, 3, 1).squaredNorm() - sh_hlim * sh_hlim),
-                Scalar(0.5) * sh_weight(1) * (psh.block(0, 1, 3, 1).squaredNorm() - sh_hlim * sh_hlim), 
-                Scalar(0.5) * sh_weight(2) * (psh.block(0, 2, 3, 1).squaredNorm() - sh_hlim * sh_hlim),
-                Scalar(0.5) * sh_weight(3) * (psh.block(0, 3, 3, 1).squaredNorm() - sh_hlim * sh_hlim);
+      Scalar(0.5) * sh_weight(1) * (psh.block(0, 1, 3, 1).squaredNorm() - sh_hlim * sh_hlim),
+      Scalar(0.5) * sh_weight(2) * (psh.block(0, 2, 3, 1).squaredNorm() - sh_hlim * sh_hlim),
+      Scalar(0.5) * sh_weight(3) * (psh.block(0, 3, 3, 1).squaredNorm() - sh_hlim * sh_hlim);
 
   sh_ub_max_ = sh_ub_max_.cwiseMax(Scalar(0.));
 
@@ -167,11 +171,11 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calc(
   //         + Scalar(0.5)*( (stop_weights_.cwiseProduct(x.tail(8) - pref_) ).array() * gait_double.array()
   //         ).matrix().squaredNorm()  ;
 
-  d->cost = Scalar(0.5) * d->r.transpose() * d->r + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm() +
-            Scalar(0.5) * ((stop_weights_.cwiseProduct(x.tail(8) - pstop_)).array() * gait_double.array())
-                              .matrix()
-                              .squaredNorm() +
-            sh_ub_max_.sum();
+  d->cost =
+      Scalar(0.5) * d->r.transpose() * d->r + friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm() +
+      Scalar(0.5) *
+          ((stop_weights_.cwiseProduct(x.tail(8) - pstop_)).array() * gait_double.array()).matrix().squaredNorm() +
+      sh_ub_max_.sum();
 }
 
 template <typename Scalar>
@@ -192,10 +196,10 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calcDiff(
   // Cost derivatives : Lx
   d->Lx.setZero();
   d->Lx.template head<12>() = (state_weights_.array() * d->r.template head<12>().array()).matrix();
-  d->Lx.template tail<8>() = (heuristic_weights_.array() * d->r.template segment<8>(12).array()).matrix() +
-                             ((stop_weights_.cwiseProduct(x.tail(8) - pstop_)).array() * gait_double.array() *
-                              stop_weights_.array())
-                                 .matrix();
+  d->Lx.template tail<8>() =
+      (heuristic_weights_.array() * d->r.template segment<8>(12).array()).matrix() +
+      ((stop_weights_.cwiseProduct(x.tail(8) - pstop_)).array() * gait_double.array() * stop_weights_.array())
+          .matrix();
 
   // Cost derivative : Lu
   for (int i = 0; i < 4; i = i + 1) {
@@ -210,21 +214,20 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calcDiff(
 
   d->Lxx.diagonal().head(12) = (state_weights_.array() * state_weights_.array()).matrix();
   d->Lxx.diagonal().tail(8) = (gait_double.array() * heuristic_weights_.array() * heuristic_weights_.array()).matrix();
-  d->Lxx.diagonal().tail(8) +=
-      (gait_double.array() * stop_weights_.array() * stop_weights_.array()).matrix();
+  d->Lxx.diagonal().tail(8) += (gait_double.array() * stop_weights_.array() * stop_weights_.array()).matrix();
 
   // Shoulder height derivative cost
   for (int j = 0; j < 4; j = j + 1) {
     if (sh_ub_max_[j] > Scalar(0.)) {
-      if (shoulder_reference_position){
+      if (shoulder_reference_position) {
         d->Lx(12 + 2 * j, 0) += -sh_weight(j) * psh(0, j);
         d->Lx(12 + 2 * j + 1, 0) += -sh_weight(j) * psh(1, j);
 
         d->Lxx(12 + 2 * j, 12 + 2 * j) += sh_weight(j);
         d->Lxx(12 + 2 * j + 1, 12 + 2 * j + 1) += sh_weight(j);
 
-      } else{   
-        // Approximation of small even for yaw (wrong)  
+      } else {
+        // Approximation of small even for yaw (wrong)
         // d->Lx(0, 0) += sh_weight(j) * psh(0, j);
         // d->Lx(1, 0) += sh_weight(j) * psh(1, j);
         // d->Lx(2, 0) += sh_weight(j) * psh(2, j);
@@ -240,7 +243,8 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calcDiff(
         // d->Lxx(2, 2) += sh_weight(j);
         // d->Lxx(3, 3) += sh_weight(j) * pshoulder_0(1, j) * pshoulder_0(1, j);
         // d->Lxx(3, 3) += sh_weight(j) * pshoulder_0(0, j) * pshoulder_0(0, j);
-        // d->Lxx(5, 5) += sh_weight(j) * (pshoulder_0(1, j) * pshoulder_0(1, j) + pshoulder_0(0, j) * pshoulder_0(0, j));
+        // d->Lxx(5, 5) += sh_weight(j) * (pshoulder_0(1, j) * pshoulder_0(1, j) + pshoulder_0(0, j) * pshoulder_0(0,
+        // j));
 
         // d->Lxx(12 + 2 * j, 12 + 2 * j) += sh_weight(j);
         // d->Lxx(12 + 2 * j + 1, 12 + 2 * j + 1) += sh_weight(j);
@@ -275,8 +279,8 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calcDiff(
         d->Lx(2, 0) += sh_weight(j) * psh(2, j);
         d->Lx(3, 0) += sh_weight(j) * pshoulder_0(1, j) * psh(2, j);
         d->Lx(4, 0) += -sh_weight(j) * pshoulder_0(0, j) * psh(2, j);
-        d->Lx(5, 0) += sh_weight(j) * ( (-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j) ) * psh(0, j) +
-                                        ( cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j) ) * psh(1, j) );
+        d->Lx(5, 0) += sh_weight(j) * ((-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j)) * psh(0, j) +
+                                       (cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j)) * psh(1, j));
 
         d->Lx(12 + 2 * j, 0) += -sh_weight(j) * psh(0, j);
         d->Lx(12 + 2 * j + 1, 0) += -sh_weight(j) * psh(1, j);
@@ -286,19 +290,21 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calcDiff(
         d->Lxx(2, 2) += sh_weight(j);
         d->Lxx(3, 3) += sh_weight(j) * pshoulder_0(1, j) * pshoulder_0(1, j);
         d->Lxx(3, 3) += sh_weight(j) * pshoulder_0(0, j) * pshoulder_0(0, j);
-        d->Lxx(5, 5) += sh_weight(j) * (   (-cos(x(5)) * pshoulder_0(0, j) + sin(x(5)) * pshoulder_0(1, j) )*psh(0, j)  +
-                                           (-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j) )*(-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j) ) + 
-                                           ( -sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j) ) * psh(1, j) + 
-                                           ( cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j) ) * ( cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j) ) );
+        d->Lxx(5, 5) += sh_weight(j) * ((-cos(x(5)) * pshoulder_0(0, j) + sin(x(5)) * pshoulder_0(1, j)) * psh(0, j) +
+                                        (-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j)) *
+                                            (-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j)) +
+                                        (-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j)) * psh(1, j) +
+                                        (cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j)) *
+                                            (cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j)));
 
         d->Lxx(12 + 2 * j, 12 + 2 * j) += sh_weight(j);
         d->Lxx(12 + 2 * j + 1, 12 + 2 * j + 1) += sh_weight(j);
 
-        d->Lxx(0, 5) += sh_weight(j) * (-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j) );
-        d->Lxx(5, 0) += sh_weight(j) * (-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j) );
+        d->Lxx(0, 5) += sh_weight(j) * (-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j));
+        d->Lxx(5, 0) += sh_weight(j) * (-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j));
 
-        d->Lxx(1, 5) += sh_weight(j) * ( cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j) );
-        d->Lxx(5, 1) += sh_weight(j) * ( cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j) );
+        d->Lxx(1, 5) += sh_weight(j) * (cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j));
+        d->Lxx(5, 1) += sh_weight(j) * (cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j));
 
         d->Lxx(2, 3) += sh_weight(j) * pshoulder_0(1, j);
         d->Lxx(2, 4) += -sh_weight(j) * pshoulder_0(0, j);
@@ -311,14 +317,14 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::calcDiff(
         d->Lxx(0, 12 + 2 * j) += -sh_weight(j);
         d->Lxx(12 + 2 * j, 0) += -sh_weight(j);
 
-        d->Lxx(5, 12 + 2 * j) += - sh_weight(j) * (-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j) );
-        d->Lxx(12 + 2 * j, 5) += - sh_weight(j) * (-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j) );
+        d->Lxx(5, 12 + 2 * j) += -sh_weight(j) * (-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j));
+        d->Lxx(12 + 2 * j, 5) += -sh_weight(j) * (-sin(x(5)) * pshoulder_0(0, j) - cos(x(5)) * pshoulder_0(1, j));
 
         d->Lxx(1, 12 + 2 * j + 1) += -sh_weight(j);
         d->Lxx(12 + 2 * j + 1, 1) += -sh_weight(j);
 
-        d->Lxx(5, 12 + 2 * j + 1) += -sh_weight(j) *  ( cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j) );
-        d->Lxx(12 + 2 * j + 1, 5) += -sh_weight(j) *  ( cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j) );
+        d->Lxx(5, 12 + 2 * j + 1) += -sh_weight(j) * (cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j));
+        d->Lxx(12 + 2 * j + 1, 5) += -sh_weight(j) * (cos(x(5)) * pshoulder_0(0, j) - sin(x(5)) * pshoulder_0(1, j));
       }
     }
   }
@@ -402,8 +408,7 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::set_heuristic_weights(const typen
 }
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedAugmentedTpl<Scalar>::get_stop_weights()
-    const {
+const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedAugmentedTpl<Scalar>::get_stop_weights() const {
   return stop_weights_;
 }
 template <typename Scalar>
@@ -515,11 +520,11 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::set_centrifugal_term(const bool& 
 }
 
 template <typename Scalar>
-const bool& ActionModelQuadrupedAugmentedTpl<Scalar>::get_shoulder_reference_position() const{
+const bool& ActionModelQuadrupedAugmentedTpl<Scalar>::get_shoulder_reference_position() const {
   return shoulder_reference_position;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTpl<Scalar>::set_shoulder_reference_position(const bool& reference){
+void ActionModelQuadrupedAugmentedTpl<Scalar>::set_shoulder_reference_position(const bool& reference) {
   shoulder_reference_position = reference;
 }
 
@@ -545,11 +550,13 @@ void ActionModelQuadrupedAugmentedTpl<Scalar>::set_shoulder_hlim(const Scalar& h
 }
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 4, 1>& ActionModelQuadrupedAugmentedTpl<Scalar>::get_shoulder_contact_weight() const {
+const typename Eigen::Matrix<Scalar, 4, 1>& ActionModelQuadrupedAugmentedTpl<Scalar>::get_shoulder_contact_weight()
+    const {
   return sh_weight;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTpl<Scalar>::set_shoulder_contact_weight(const typename Eigen::Matrix<Scalar, 4, 1>& weight) {
+void ActionModelQuadrupedAugmentedTpl<Scalar>::set_shoulder_contact_weight(
+    const typename Eigen::Matrix<Scalar, 4, 1>& weight) {
   // The model need to be updated after this changed
   sh_weight = weight;
 }

@@ -13,7 +13,7 @@ namespace quadruped_walkgen {
 namespace python {
 
 void exposeActionAbstract() {
-  //bp::register_ptr_to_python<boost::shared_ptr<ActionModelAbstract> >();
+  // bp::register_ptr_to_python<boost::shared_ptr<ActionModelAbstract> >();
 
   bp::class_<ActionModelAbstract_wrap, boost::noncopyable>(
       "ActionModelAbstract",
@@ -68,7 +68,7 @@ void exposeActionAbstract() {
       //         ":param x: discrete-time state vector\n"
       //         ":param maxiter: maximum allowed number of iterations\n"
       //         ":param tol: stopping tolerance criteria (default 1e-9)\n"
-     //          ":return u: quasic-static control"))
+      //          ":return u: quasic-static control"))
       .add_property(
           "nu", bp::make_function(&ActionModelAbstract_wrap::get_nu, bp::return_value_policy<bp::return_by_value>()),
           "dimension of control vector")
@@ -88,7 +88,7 @@ void exposeActionAbstract() {
       .add_property("u_ub", bp::make_function(&ActionModelAbstract_wrap::get_u_ub, bp::return_internal_reference<>()),
                     &ActionModelAbstract_wrap::set_u_ub, "upper control limits");
 
-  //bp::register_ptr_to_python<boost::shared_ptr<ActionDataAbstract> >();
+  // bp::register_ptr_to_python<boost::shared_ptr<ActionDataAbstract> >();
 
   bp::class_<ActionDataAbstract, boost::noncopyable>(
       "ActionDataAbstract",
@@ -124,4 +124,4 @@ void exposeActionAbstract() {
 }
 
 }  // namespace python
-}  // namespace crocoddyl
+}  // namespace quadruped_walkgen

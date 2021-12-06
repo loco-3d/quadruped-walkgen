@@ -57,9 +57,7 @@ class GaitProblem:
         self.terminalModel.forceWeights = np.zeros((12, 1))
         self.terminalModel.frictionWeights = 0
 
-        self.problem = crocoddyl.ShootingProblem(
-            np.zeros(12), self.ListAction, self.terminalModel
-        )
+        self.problem = crocoddyl.ShootingProblem(np.zeros(12), self.ListAction, self.terminalModel)
         self.ddp = crocoddyl.SolverDDP(self.problem)
 
     def updateProblem(self, fsteps, xref, x0):
@@ -102,13 +100,9 @@ class GaitProblem:
     def createGaitMatrix(self):
 
         # Construction of the gait matrix representing the feet in contact with the ground
-        index = next(
-            (idx for idx, val in np.ndenumerate(self.fsteps[:, 0]) if val == 0.0), 0.0
-        )[0]
+        index = next((idx for idx, val in np.ndenumerate(self.fsteps[:, 0]) if val == 0.0), 0.0)[0]
         self.gait[:, 0] = self.fsteps[:, 0]
-        self.gait[:index, 1:] = 1.0 - (
-            np.isnan(self.fsteps[:index, 1::3]) | (self.fsteps[:index, 1::3] == 0.0)
-        )
+        self.gait[:index, 1:] = 1.0 - (np.isnan(self.fsteps[:index, 1::3]) | (self.fsteps[:index, 1::3] == 0.0))
 
         # Replace NaN values by zeroes
         self.fsteps[np.isnan(self.fsteps)] = 0.0

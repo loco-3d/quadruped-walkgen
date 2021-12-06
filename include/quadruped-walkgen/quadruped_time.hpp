@@ -17,7 +17,7 @@ class ActionModelQuadrupedTimeTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
   typedef crocoddyl::ActionDataAbstractTpl<Scalar> ActionDataAbstract;
   typedef crocoddyl::ActionModelAbstractTpl<Scalar> Base;
   typedef crocoddyl::MathBaseTpl<Scalar> MathBase;
-  
+
   ActionModelQuadrupedTimeTpl();
   ~ActionModelQuadrupedTimeTpl();
 
@@ -36,17 +36,17 @@ class ActionModelQuadrupedTimeTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
   const typename Eigen::Matrix<Scalar, 8, 1>& get_heuristic_weights() const;
   void set_heuristic_weights(const typename MathBase::VectorXs& weights);
 
-  // Update the model depending if the foot in contact with the ground 
+  // Update the model depending if the foot in contact with the ground
   // or the new lever arms
-  void update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet  ,
+  void update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet,
                     const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
-                    const Eigen::Ref<const typename MathBase::VectorXs>& S ) ;
+                    const Eigen::Ref<const typename MathBase::VectorXs>& S);
 
-  const bool& get_symmetry_term() const ;
-  void set_symmetry_term(const bool& sym_term) ;
+  const bool& get_symmetry_term() const;
+  void set_symmetry_term(const bool& sym_term);
 
-  const bool& get_centrifugal_term() const ;
-  void set_centrifugal_term(const bool& cent_term) ;
+  const bool& get_centrifugal_term() const;
+  void set_centrifugal_term(const bool& cent_term);
 
   const Scalar& get_T_gait() const;
   void set_T_gait(const Scalar& T_gait_);
@@ -67,9 +67,8 @@ class ActionModelQuadrupedTimeTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
   const Scalar& get_dt_bound_weight_cmd() const;
   void set_dt_bound_weight_cmd(const Scalar& weight_);
 
-
   // get cost
-  const typename Eigen::Matrix<Scalar, 7, 1 >& get_cost() const;  
+  const typename Eigen::Matrix<Scalar, 7, 1>& get_cost() const;
 
  protected:
   using Base::has_control_limits_;  //!< Indicates whether any of the control limits
@@ -79,42 +78,39 @@ class ActionModelQuadrupedTimeTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
   using Base::u_lb_;                //!< Lower control limits
   using Base::u_ub_;                //!< Upper control limits
   using Base::unone_;               //!< Neutral state
- 
- 
- private:
-  Scalar T_gait ;
-  Scalar dt_weight_cmd ; 
-  Scalar dt_bound_weight_cmd ; 
-  bool centrifugal_term ; 
-  bool symmetry_term ; 
 
-   // Log cost
-  bool log_cost ; 
-  typename Eigen::Matrix<Scalar, 7, 1> cost_ ; 
+ private:
+  Scalar T_gait;
+  Scalar dt_weight_cmd;
+  Scalar dt_bound_weight_cmd;
+  bool centrifugal_term;
+  bool symmetry_term;
+
+  // Log cost
+  bool log_cost;
+  typename Eigen::Matrix<Scalar, 7, 1> cost_;
 
   typename Eigen::Matrix<Scalar, 12, 1> state_weights_;
   typename Eigen::Matrix<Scalar, 8, 1> heuristic_weights_;
 
-  typename MathBase::Matrix3s R_tmp ; 
+  typename MathBase::Matrix3s R_tmp;
 
   typename MathBase::MatrixXs xref_;
   typename Eigen::Matrix<Scalar, 8, 1> pheuristic_;
-  typename Eigen::Matrix<Scalar, 8, 1> gait_double_;    
-  // typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_0;  
-  // typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_tmp;  
+  typename Eigen::Matrix<Scalar, 8, 1> gait_double_;
+  // typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_0;
+  // typename Eigen::Matrix<Scalar, 2 , 4 > pshoulder_tmp;
 
-  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp; 
-  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_1; 
-  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_2; 
+  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp;
+  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_1;
+  // typename Eigen::Matrix<Scalar, 3 , 1 > pcentrifugal_tmp_2;
 
-  typename Eigen::Matrix<Scalar, 1 , 1 > dt_ref_ ; 
-  typename Eigen::Matrix<Scalar, 1 , 1 > dt_min_ ; 
-  typename Eigen::Matrix<Scalar, 1 , 1 > dt_max_ ; 
+  typename Eigen::Matrix<Scalar, 1, 1> dt_ref_;
+  typename Eigen::Matrix<Scalar, 1, 1> dt_min_;
+  typename Eigen::Matrix<Scalar, 1, 1> dt_max_;
 
-  typename Eigen::Matrix<Scalar, 2, 1 > rub_max_ ; 
-  typename Eigen::Matrix<Scalar, 2, 1 > rub_max_bool ; 
-
-
+  typename Eigen::Matrix<Scalar, 2, 1> rub_max_;
+  typename Eigen::Matrix<Scalar, 2, 1> rub_max_bool;
 };
 
 template <typename _Scalar>
@@ -139,9 +135,6 @@ struct ActionDataQuadrupedTimeTpl : public crocoddyl::ActionDataAbstractTpl<_Sca
   explicit ActionDataQuadrupedTimeTpl(Model<Scalar>* const model) : crocoddyl::ActionDataAbstractTpl<Scalar>(model) {}
 };
 
-  
- 
-
 /* --- Details -------------------------------------------------------------- */
 /* --- Details -------------------------------------------------------------- */
 /* --- Details -------------------------------------------------------------- */
@@ -149,9 +142,8 @@ struct ActionDataQuadrupedTimeTpl : public crocoddyl::ActionDataAbstractTpl<_Sca
 typedef ActionModelQuadrupedTimeTpl<double> ActionModelQuadrupedTime;
 typedef ActionDataQuadrupedTimeTpl<double> ActionDataQuadrupedTime;
 
-}
+}  // namespace quadruped_walkgen
 
 #include "quadruped_time.hxx"
-
 
 #endif

@@ -61,7 +61,7 @@ ActionModelQuadrupedTpl<Scalar>::ActionModelQuadrupedTpl(typename Eigen::Matrix<
   // Implicit integration
   // V+ = V + dt*B*u   ; P+ = P + dt*V+ != explicit : P+ = P + dt*V
   implicit_integration = true;
-  offset_com = offset_CoM; // x, y, z offset
+  offset_com = offset_CoM;  // x, y, z offset
 }
 
 template <typename Scalar>
@@ -85,7 +85,8 @@ void ActionModelQuadrupedTpl<Scalar>::calc(const boost::shared_ptr<crocoddyl::Ac
   for (int i = 0; i < 4; i = i + 1) {
     if (gait(i, 0) != 0) {
       // Compute pdistance of the shoulder wrt contact point
-      psh.block(0, i, 3, 1) << x[0] - offset_com(0, 0) + pshoulder_0(0, i) - pshoulder_0(1, i) * x[5] - lever_arms(0, i),
+      psh.block(0, i, 3, 1) << x[0] - offset_com(0, 0) + pshoulder_0(0, i) - pshoulder_0(1, i) * x[5] -
+                                   lever_arms(0, i),
           x[1] - offset_com(1, 0) + pshoulder_0(1, i) + pshoulder_0(0, i) * x[5] - lever_arms(1, i),
           x[2] - offset_com(2, 0) + pshoulder_0(1, i) * x[3] - pshoulder_0(0, i) * x[4];
     } else {
