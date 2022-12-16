@@ -1,5 +1,10 @@
 # quadruped-walkgen
 
+[![Pipeline status](https://gitlab.laas.fr/loco-3d/quadruped-walkgen/badges/master/pipeline.svg)](https://gitlab.laas.fr/loco-3d/quadruped-walkgen/commits/master)
+[![Coverage report](https://gitlab.laas.fr/loco-3d/quadruped-walkgen/badges/master/coverage.svg?job=doc-coverage)](https://gepettoweb.laas.fr/doc/loco-3d/quadruped-walkgen/master/coverage/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/loco-3d/quadruped-walkgen/master.svg)](https://results.pre-commit.ci/latest/github/loco-3d/quadruped-walkgen)
+
 The objective of this project is the writing of a crocoddyl class in C ++ to use it in a simulation of the quadruped. It is based on a simplified dynamical model of the quadruped and used to solve a MPC problem.
 The quadruped action model class is mainly based on the unicycle example class which derives from on the ActionModelAbstract class.
 
