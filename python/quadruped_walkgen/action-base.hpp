@@ -18,6 +18,7 @@
 #include <quadruped-walkgen/quadruped_step_time.hpp>
 #include <quadruped-walkgen/quadruped_time.hpp>
 
+#include "core.hpp"
 #include "crocoddyl/core/utils/exception.hpp"
 
 namespace quadruped_walkgen {
