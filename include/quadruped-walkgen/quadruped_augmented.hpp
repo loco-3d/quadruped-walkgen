@@ -2,16 +2,16 @@
 #define __quadruped_walkgen_quadruped_augmented_hpp__
 #include <stdexcept>
 
-#include "crocoddyl/core/fwd.hpp"
 #include "crocoddyl/core/action-base.hpp"
+#include "crocoddyl/core/fwd.hpp"
 #include "crocoddyl/core/states/euclidean.hpp"
-#include "crocoddyl/multibody/friction-cone.hpp"
-
 #include "crocoddyl/core/utils/timer.hpp"
+#include "crocoddyl/multibody/friction-cone.hpp"
 
 namespace quadruped_walkgen {
 template <typename _Scalar>
-class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar> {
+class ActionModelQuadrupedAugmentedTpl
+    : public crocoddyl::ActionModelAbstractTpl<_Scalar> {
  public:
   typedef _Scalar Scalar;
   typedef crocoddyl::ActionDataAbstractTpl<Scalar> ActionDataAbstract;
@@ -19,7 +19,8 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   typedef crocoddyl::MathBaseTpl<Scalar> MathBase;
 
   ActionModelQuadrupedAugmentedTpl(
-      typename Eigen::Matrix<Scalar, 3, 1> offset_CoM = Eigen::Matrix<Scalar, 3, 1>::Zero());
+      typename Eigen::Matrix<Scalar, 3, 1> offset_CoM =
+          Eigen::Matrix<Scalar, 3, 1>::Zero());
   ~ActionModelQuadrupedAugmentedTpl();
 
   virtual void calc(const boost::shared_ptr<ActionDataAbstract>& data,
@@ -77,8 +78,10 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   const Scalar& get_shoulder_hlim() const;
   void set_shoulder_hlim(const Scalar& hlim);
 
-  const typename Eigen::Matrix<Scalar, 4, 1>& get_shoulder_contact_weight() const;
-  void set_shoulder_contact_weight(const typename Eigen::Matrix<Scalar, 4, 1>& weight);
+  const typename Eigen::Matrix<Scalar, 4, 1>& get_shoulder_contact_weight()
+      const;
+  void set_shoulder_contact_weight(
+      const typename Eigen::Matrix<Scalar, 4, 1>& weight);
 
   const bool& get_shoulder_reference_position() const;
   void set_shoulder_reference_position(const bool& reference);
@@ -98,7 +101,8 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   void set_relative_forces(const bool& rel_forces);
 
  protected:
-  using Base::has_control_limits_;  //!< Indicates whether any of the control limits
+  using Base::has_control_limits_;  //!< Indicates whether any of the control
+                                    //!< limits
   using Base::nr_;                  //!< Dimension of the cost residual
   using Base::nu_;                  //!< Control dimension
   using Base::state_;               //!< Model of the state
@@ -118,8 +122,8 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
   bool symmetry_term;
   bool relative_forces;
 
-  // Using the reference trajectory (true) or the predicted trajectory (false) of the CoM
-  // to compute the distance shoulder / contact point.
+  // Using the reference trajectory (true) or the predicted trajectory (false)
+  // of the CoM to compute the distance shoulder / contact point.
   bool shoulder_reference_position;
 
   typename Eigen::Matrix<Scalar, 12, 1> uref_;
@@ -175,7 +179,8 @@ class ActionModelQuadrupedAugmentedTpl : public crocoddyl::ActionModelAbstractTp
 };
 
 template <typename _Scalar>
-struct ActionDataQuadrupedAugmentedTpl : public crocoddyl::ActionDataAbstractTpl<_Scalar> {
+struct ActionDataQuadrupedAugmentedTpl
+    : public crocoddyl::ActionDataAbstractTpl<_Scalar> {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   typedef _Scalar Scalar;

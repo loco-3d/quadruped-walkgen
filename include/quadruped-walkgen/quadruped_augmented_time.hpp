@@ -2,16 +2,16 @@
 #define __quadruped_walkgen_quadruped_augmented_time_hpp__
 #include <stdexcept>
 
-#include "crocoddyl/core/fwd.hpp"
 #include "crocoddyl/core/action-base.hpp"
+#include "crocoddyl/core/fwd.hpp"
 #include "crocoddyl/core/states/euclidean.hpp"
-#include "crocoddyl/multibody/friction-cone.hpp"
-
 #include "crocoddyl/core/utils/timer.hpp"
+#include "crocoddyl/multibody/friction-cone.hpp"
 
 namespace quadruped_walkgen {
 template <typename _Scalar>
-class ActionModelQuadrupedAugmentedTimeTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar> {
+class ActionModelQuadrupedAugmentedTimeTpl
+    : public crocoddyl::ActionModelAbstractTpl<_Scalar> {
  public:
   typedef _Scalar Scalar;
   typedef crocoddyl::ActionDataAbstractTpl<Scalar> ActionDataAbstract;
@@ -112,7 +112,8 @@ class ActionModelQuadrupedAugmentedTimeTpl : public crocoddyl::ActionModelAbstra
   const typename Eigen::Matrix<Scalar, 7, 1>& get_cost() const;
 
  protected:
-  using Base::has_control_limits_;  //!< Indicates whether any of the control limits
+  using Base::has_control_limits_;  //!< Indicates whether any of the control
+                                    //!< limits
   using Base::nr_;                  //!< Dimension of the cost residual
   using Base::nu_;                  //!< Control dimension
   using Base::state_;               //!< Model of the state
@@ -194,7 +195,8 @@ class ActionModelQuadrupedAugmentedTimeTpl : public crocoddyl::ActionModelAbstra
 };
 
 template <typename _Scalar>
-struct ActionDataQuadrupedAugmentedTimeTpl : public crocoddyl::ActionDataAbstractTpl<_Scalar> {
+struct ActionDataQuadrupedAugmentedTimeTpl
+    : public crocoddyl::ActionDataAbstractTpl<_Scalar> {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   typedef _Scalar Scalar;
@@ -220,8 +222,10 @@ struct ActionDataQuadrupedAugmentedTimeTpl : public crocoddyl::ActionDataAbstrac
 /* --- Details -------------------------------------------------------------- */
 /* --- Details -------------------------------------------------------------- */
 
-typedef ActionModelQuadrupedAugmentedTimeTpl<double> ActionModelQuadrupedAugmentedTime;
-typedef ActionDataQuadrupedAugmentedTimeTpl<double> ActionDataQuadrupedAugmentedTime;
+typedef ActionModelQuadrupedAugmentedTimeTpl<double>
+    ActionModelQuadrupedAugmentedTime;
+typedef ActionDataQuadrupedAugmentedTimeTpl<double>
+    ActionDataQuadrupedAugmentedTime;
 
 }  // namespace quadruped_walkgen
 

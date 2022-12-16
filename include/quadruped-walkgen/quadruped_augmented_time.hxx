@@ -5,8 +5,10 @@
 
 namespace quadruped_walkgen {
 template <typename Scalar>
-ActionModelQuadrupedAugmentedTimeTpl<Scalar>::ActionModelQuadrupedAugmentedTimeTpl()
-    : crocoddyl::ActionModelAbstractTpl<Scalar>(boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(21), 12, 33) {
+ActionModelQuadrupedAugmentedTimeTpl<
+    Scalar>::ActionModelQuadrupedAugmentedTimeTpl()
+    : crocoddyl::ActionModelAbstractTpl<Scalar>(
+          boost::make_shared<crocoddyl::StateVectorTpl<Scalar> >(21), 12, 33) {
   // Model parameters
   mu = Scalar(1);
   mass = Scalar(2.50000279);
@@ -28,16 +30,19 @@ ActionModelQuadrupedAugmentedTimeTpl<Scalar>::ActionModelQuadrupedAugmentedTimeT
 
   // Weight vectors initialization
   force_weights_.setConstant(Scalar(0.2));
-  state_weights_ << Scalar(1.), Scalar(1.), Scalar(150.), Scalar(35.), Scalar(30.), Scalar(8.), Scalar(20.),
-      Scalar(20.), Scalar(15.), Scalar(4.), Scalar(4.), Scalar(8.);
+  state_weights_ << Scalar(1.), Scalar(1.), Scalar(150.), Scalar(35.),
+      Scalar(30.), Scalar(8.), Scalar(20.), Scalar(20.), Scalar(15.),
+      Scalar(4.), Scalar(4.), Scalar(8.);
   friction_weight_ = Scalar(10);
   heuristicWeights.setConstant(Scalar(1));
   last_position_weights_.setConstant(Scalar(1));
-  pshoulder_ << Scalar(0.1946), Scalar(0.15005), Scalar(0.1946), Scalar(-0.15005), Scalar(-0.1946), Scalar(0.15005),
-      Scalar(-0.1946), Scalar(-0.15005);
+  pshoulder_ << Scalar(0.1946), Scalar(0.15005), Scalar(0.1946),
+      Scalar(-0.15005), Scalar(-0.1946), Scalar(0.15005), Scalar(-0.1946),
+      Scalar(-0.15005);
   pheuristic_.setZero();
-  pshoulder_0 << Scalar(0.1946), Scalar(0.1946), Scalar(-0.1946), Scalar(-0.1946), Scalar(0.15005), Scalar(-0.15005),
-      Scalar(0.15005), Scalar(-0.15005);
+  pshoulder_0 << Scalar(0.1946), Scalar(0.1946), Scalar(-0.1946),
+      Scalar(-0.1946), Scalar(0.15005), Scalar(-0.15005), Scalar(0.15005),
+      Scalar(-0.15005);
   pshoulder_tmp.setZero();
   pcentrifugal_tmp_1.setZero();
   pcentrifugal_tmp_2.setZero();
@@ -78,8 +83,10 @@ ActionModelQuadrupedAugmentedTimeTpl<Scalar>::ActionModelQuadrupedAugmentedTimeT
   log_cost = false;
 
   // // Used for shoulder height weight
-  // pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),  Scalar(-0.1946) ,
-  //                 Scalar(0.15005) ,  Scalar(-0.15005)  , Scalar(0.15005)  ,  Scalar(-0.15005) ;
+  // pshoulder_0 <<  Scalar(0.1946) ,   Scalar(0.1946) ,   Scalar(-0.1946),
+  // Scalar(-0.1946) ,
+  //                 Scalar(0.15005) ,  Scalar(-0.15005)  , Scalar(0.15005)  ,
+  //                 Scalar(-0.15005) ;
   sh_hlim = Scalar(0.225);
   sh_weight = Scalar(10.);
   sh_ub_max_.setZero();
@@ -87,25 +94,30 @@ ActionModelQuadrupedAugmentedTimeTpl<Scalar>::ActionModelQuadrupedAugmentedTimeT
 }
 
 template <typename Scalar>
-ActionModelQuadrupedAugmentedTimeTpl<Scalar>::~ActionModelQuadrupedAugmentedTimeTpl() {}
+ActionModelQuadrupedAugmentedTimeTpl<
+    Scalar>::~ActionModelQuadrupedAugmentedTimeTpl() {}
 
 template <typename Scalar>
 void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calc(
     const boost::shared_ptr<crocoddyl::ActionDataAbstractTpl<Scalar> >& data,
-    const Eigen::Ref<const typename MathBase::VectorXs>& x, const Eigen::Ref<const typename MathBase::VectorXs>& u) {
+    const Eigen::Ref<const typename MathBase::VectorXs>& x,
+    const Eigen::Ref<const typename MathBase::VectorXs>& u) {
   if (static_cast<std::size_t>(x.size()) != state_->get_nx()) {
     throw_pretty("Invalid argument: "
-                 << "x has wrong dimension (it should be " + std::to_string(state_->get_nx()) + ")");
+                 << "x has wrong dimension (it should be " +
+                        std::to_string(state_->get_nx()) + ")");
   }
   if (static_cast<std::size_t>(u.size()) != nu_) {
     throw_pretty("Invalid argument: "
-                 << "u has wrong dimension (it should be " + std::to_string(nu_) + ")");
+                 << "u has wrong dimension (it should be " +
+                        std::to_string(nu_) + ")");
   }
 
   ActionDataQuadrupedAugmentedTimeTpl<Scalar>* d =
       static_cast<ActionDataQuadrupedAugmentedTimeTpl<Scalar>*>(data.get());
 
-  A.topRightCorner(6, 6) << Eigen::Matrix<Scalar, 6, 6>::Identity() * x.tail(1)[0];
+  A.topRightCorner(6, 6) << Eigen::Matrix<Scalar, 6, 6>::Identity() *
+                                x.tail(1)[0];
   g[8] = Scalar(-9.81) * x.tail(1)[0];
 
   //  Update B :
@@ -114,55 +126,68 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calc(
     if (gait(i, 0) != 0) {
       lever_tmp.head(2) = x.block(12 + 2 * i, 0, 2, 1);
       lever_tmp += -x.block(0, 0, 3, 1);
-      R_tmp << Scalar(0.0), -lever_tmp[2], lever_tmp[1], lever_tmp[2], Scalar(0.0), -lever_tmp[0], -lever_tmp[1],
-          lever_tmp[0], Scalar(0.0);
+      R_tmp << Scalar(0.0), -lever_tmp[2], lever_tmp[1], lever_tmp[2],
+          Scalar(0.0), -lever_tmp[0], -lever_tmp[1], lever_tmp[0], Scalar(0.0);
 
       B.block(9, 3 * i, 3, 3) << x.tail(1)[0] * R * R_tmp;
-      B.block(6, 3 * i, 3, 3).diagonal() << x.tail(1)[0] / mass, x.tail(1)[0] / mass, x.tail(1)[0] / mass;
+      B.block(6, 3 * i, 3, 3).diagonal() << x.tail(1)[0] / mass,
+          x.tail(1)[0] / mass, x.tail(1)[0] / mass;
 
       // Compute pdistance of the shoulder wrt contact point
-      psh.block(0, i, 3, 1) << x(0) + pshoulder_0(0, i) - pshoulder_0(1, i) * x(5) - x(12 + 2 * i),
-          x(1) + pshoulder_0(1, i) + pshoulder_0(0, i) * x(5) - x(12 + 2 * i + 1),
+      psh.block(0, i, 3, 1) << x(0) + pshoulder_0(0, i) -
+                                   pshoulder_0(1, i) * x(5) - x(12 + 2 * i),
+          x(1) + pshoulder_0(1, i) + pshoulder_0(0, i) * x(5) -
+              x(12 + 2 * i + 1),
           x(2) + pshoulder_0(1, i) * x(3) - pshoulder_0(0, i) * x(4);
     } else {
       // Compute pdistance of the shoulder wrt contact point
       psh.block(0, i, 3, 1).setZero();
       // Compute pdistance of the shoulder wrt contact point
-      // psh.block(0,i,3,1) << x(0) + pshoulder_0(0,i) - pshoulder_0(1,i)*x(5) - x(12+2*i),
-      //                       x(1) + pshoulder_0(1,i) + pshoulder_0(0,i)*x(5) -  x(12+2*i+1),
-      //                       x(2) + pshoulder_0(1,i)*x(3) - pshoulder_0(0,i)*x(4);
+      // psh.block(0,i,3,1) << x(0) + pshoulder_0(0,i) - pshoulder_0(1,i)*x(5) -
+      // x(12+2*i),
+      //                       x(1) + pshoulder_0(1,i) + pshoulder_0(0,i)*x(5) -
+      //                       x(12+2*i+1), x(2) + pshoulder_0(1,i)*x(3) -
+      //                       pshoulder_0(0,i)*x(4);
     }
   };
 
   // Discrete dynamic : A*x + B*u + g
-  d->xnext.template head<12>() = A.diagonal().cwiseProduct(x.block(0, 0, 12, 1)) + g;
+  d->xnext.template head<12>() =
+      A.diagonal().cwiseProduct(x.block(0, 0, 12, 1)) + g;
   d->xnext.template head<6>() =
-      d->xnext.template head<6>() + A.topRightCorner(6, 6).diagonal().cwiseProduct(x.block(6, 0, 6, 1));
-  d->xnext.template segment<6>(6) = d->xnext.template segment<6>(6) + B.block(6, 0, 6, 12) * u;
+      d->xnext.template head<6>() +
+      A.topRightCorner(6, 6).diagonal().cwiseProduct(x.block(6, 0, 6, 1));
+  d->xnext.template segment<6>(6) =
+      d->xnext.template segment<6>(6) + B.block(6, 0, 6, 12) * u;
   d->xnext.template segment<8>(12) = x.segment(12, 8);
   d->xnext.template tail<1>() = x.tail(1);
 
   // Residual cost on the state and force norm
   d->r.template head<12>() = state_weights_.cwiseProduct(x.head(12) - xref_);
   d->r.template segment<8>(12) =
-      ((heuristicWeights.cwiseProduct(x.segment(12, 8) - pheuristic_)).array() * gait_double.array()).matrix();
+      ((heuristicWeights.cwiseProduct(x.segment(12, 8) - pheuristic_)).array() *
+       gait_double.array())
+          .matrix();
   // d->r.template segment<1>(20) = 0 (dt)
   d->r.template tail<12>() = force_weights_.cwiseProduct(u - uref_);
 
   // Friction cone
   for (int i = 0; i < 4; i = i + 1) {
-    Fa_x_u.segment(6 * i, 6) << u(3 * i) - mu * u(3 * i + 2), -u(3 * i) - mu * u(3 * i + 2),
-        u(3 * i + 1) - mu * u(3 * i + 2), -u(3 * i + 1) - mu * u(3 * i + 2), -u(3 * i + 2), u(3 * i + 2);
+    Fa_x_u.segment(6 * i, 6) << u(3 * i) - mu * u(3 * i + 2),
+        -u(3 * i) - mu * u(3 * i + 2), u(3 * i + 1) - mu * u(3 * i + 2),
+        -u(3 * i + 1) - mu * u(3 * i + 2), -u(3 * i + 2), u(3 * i + 2);
   }
   rub_max_ = (Fa_x_u - ub).cwiseMax(Scalar(0.));
 
   rub_max_dt << dt_min_ - x.tail(1), x.tail(1) - dt_max_;
-  rub_max_dt_bool = (rub_max_dt.array() >= Scalar(0.)).matrix().template cast<Scalar>();
+  rub_max_dt_bool =
+      (rub_max_dt.array() >= Scalar(0.)).matrix().template cast<Scalar>();
   rub_max_dt = rub_max_dt.cwiseMax(Scalar(0.));
 
   // Shoulder height weight
   sh_ub_max_ << psh.block(0, 0, 3, 1).squaredNorm() - sh_hlim * sh_hlim,
-      psh.block(0, 1, 3, 1).squaredNorm() - sh_hlim * sh_hlim, psh.block(0, 2, 3, 1).squaredNorm() - sh_hlim * sh_hlim,
+      psh.block(0, 1, 3, 1).squaredNorm() - sh_hlim * sh_hlim,
+      psh.block(0, 2, 3, 1).squaredNorm() - sh_hlim * sh_hlim,
       psh.block(0, 3, 3, 1).squaredNorm() - sh_hlim * sh_hlim;
 
   sh_ub_max_ = sh_ub_max_.cwiseMax(Scalar(0.));
@@ -171,37 +196,51 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calc(
   d->cost =
       Scalar(0.5) * d->r.segment(12, 8).transpose() * d->r.segment(12, 8) +
       friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm() +
-      Scalar(0.5) * ((last_position_weights_.cwiseProduct(x.segment(12, 8) - pref_)).array() * gait_double.array())
-                        .matrix()
-                        .squaredNorm() +
+      Scalar(0.5) *
+          ((last_position_weights_.cwiseProduct(x.segment(12, 8) - pref_))
+               .array() *
+           gait_double.array())
+              .matrix()
+              .squaredNorm() +
       dt_bound_weight * Scalar(0.5) * rub_max_dt.squaredNorm() +
       x(20) * Scalar(0.5) * d->r.head(12).transpose() * d->r.head(12) +
-      x(20) * Scalar(0.5) * d->r.tail(12).transpose() * d->r.tail(12) + sh_weight * Scalar(0.5) * sh_ub_max_.sum();
+      x(20) * Scalar(0.5) * d->r.tail(12).transpose() * d->r.tail(12) +
+      sh_weight * Scalar(0.5) * sh_ub_max_.sum();
 
   if (log_cost) {
-    cost_[0] = x(20) * Scalar(0.5) * d->r.head(12).transpose() * d->r.head(12);      // state
-    cost_[1] = Scalar(0.5) * d->r.segment(12, 8).transpose() * d->r.segment(12, 8);  // heuristic
-    cost_[2] = x(20) * Scalar(0.5) * d->r.tail(12).transpose() * d->r.tail(12);      // Force norm
-    cost_[3] = dt_bound_weight * Scalar(0.5) * rub_max_dt.squaredNorm();             // upper/lower bound limit
-    cost_[4] =
-        Scalar(0.5) * ((last_position_weights_.cwiseProduct(x.segment(12, 8) - pref_)).array() * gait_double.array())
-                          .matrix()
-                          .squaredNorm();                                // last position weight
-    cost_[5] = friction_weight_ * Scalar(0.5) * rub_max_.squaredNorm();  // friction weight
+    cost_[0] = x(20) * Scalar(0.5) * d->r.head(12).transpose() *
+               d->r.head(12);  // state
+    cost_[1] = Scalar(0.5) * d->r.segment(12, 8).transpose() *
+               d->r.segment(12, 8);  // heuristic
+    cost_[2] = x(20) * Scalar(0.5) * d->r.tail(12).transpose() *
+               d->r.tail(12);  // Force norm
+    cost_[3] = dt_bound_weight * Scalar(0.5) *
+               rub_max_dt.squaredNorm();  // upper/lower bound limit
+    cost_[4] = Scalar(0.5) *
+               ((last_position_weights_.cwiseProduct(x.segment(12, 8) - pref_))
+                    .array() *
+                gait_double.array())
+                   .matrix()
+                   .squaredNorm();  // last position weight
+    cost_[5] = friction_weight_ * Scalar(0.5) *
+               rub_max_.squaredNorm();  // friction weight
   }
 }
 
 template <typename Scalar>
 void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calcDiff(
     const boost::shared_ptr<crocoddyl::ActionDataAbstractTpl<Scalar> >& data,
-    const Eigen::Ref<const typename MathBase::VectorXs>& x, const Eigen::Ref<const typename MathBase::VectorXs>& u) {
+    const Eigen::Ref<const typename MathBase::VectorXs>& x,
+    const Eigen::Ref<const typename MathBase::VectorXs>& u) {
   if (static_cast<std::size_t>(x.size()) != state_->get_nx()) {
     throw_pretty("Invalid argument: "
-                 << "x has wrong dimension (it should be " + std::to_string(state_->get_nx()) + ")");
+                 << "x has wrong dimension (it should be " +
+                        std::to_string(state_->get_nx()) + ")");
   }
   if (static_cast<std::size_t>(u.size()) != nu_) {
     throw_pretty("Invalid argument: "
-                 << "u has wrong dimension (it should be " + std::to_string(nu_) + ")");
+                 << "u has wrong dimension (it should be " +
+                        std::to_string(nu_) + ")");
   }
 
   ActionDataQuadrupedAugmentedTimeTpl<Scalar>* d =
@@ -209,36 +248,53 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calcDiff(
 
   // Cost derivatives : Lx
   d->Lx.setZero();
-  d->Lx.template head<12>() = x(20) * (state_weights_.array() * d->r.template head<12>().array()).matrix();
-  d->Lx.template segment<8>(12) = (heuristicWeights.array() * d->r.template segment<8>(12).array()).matrix() +
-                                  ((last_position_weights_.cwiseProduct(x.segment(12, 8) - pref_)).array() *
-                                   gait_double.array() * last_position_weights_.array())
-                                      .matrix();
-  d->Lx.template tail<1>() << dt_bound_weight * (-rub_max_dt[0] + rub_max_dt[1]);
+  d->Lx.template head<12>() =
+      x(20) *
+      (state_weights_.array() * d->r.template head<12>().array()).matrix();
+  d->Lx.template segment<8>(12) =
+      (heuristicWeights.array() * d->r.template segment<8>(12).array())
+          .matrix() +
+      ((last_position_weights_.cwiseProduct(x.segment(12, 8) - pref_)).array() *
+       gait_double.array() * last_position_weights_.array())
+          .matrix();
+  d->Lx.template tail<1>() << dt_bound_weight *
+                                  (-rub_max_dt[0] + rub_max_dt[1]);
 
   // New cost : c = 0.5||x-x_ref||^2*dt
-  d->Lx.template tail<1>() += Scalar(0.5) * d->r.head(12).transpose() * d->r.head(12) +
-                              Scalar(0.5) * d->r.tail(12).transpose() * d->r.tail(12);
+  d->Lx.template tail<1>() +=
+      Scalar(0.5) * d->r.head(12).transpose() * d->r.head(12) +
+      Scalar(0.5) * d->r.tail(12).transpose() * d->r.tail(12);
 
   // Cost derivative : Lu
   for (int i = 0; i < 4; i = i + 1) {
     r = friction_weight_ * rub_max_.segment(6 * i, 6);
-    d->Lu.block(i * 3, 0, 3, 1) << r(0) - r(1), r(2) - r(3), -mu * (r(0) + r(1) + r(2) + r(3)) - r(4) + r(5);
+    d->Lu.block(i * 3, 0, 3, 1) << r(0) - r(1), r(2) - r(3),
+        -mu * (r(0) + r(1) + r(2) + r(3)) - r(4) + r(5);
   }
-  d->Lu = d->Lu + x(20) * (force_weights_.array() * d->r.template tail<12>().array()).matrix();
+  d->Lu =
+      d->Lu +
+      x(20) *
+          (force_weights_.array() * d->r.template tail<12>().array()).matrix();
 
   // Hessian : Lxx
   d->Lxx.setZero();
-  d->Lxx.diagonal().head(12) = x(20) * (state_weights_.array() * state_weights_.array()).matrix();
+  d->Lxx.diagonal().head(12) =
+      x(20) * (state_weights_.array() * state_weights_.array()).matrix();
   d->Lxx.diagonal().segment(12, 8) =
-      (gait_double.array() * heuristicWeights.array() * heuristicWeights.array()).matrix();
+      (gait_double.array() * heuristicWeights.array() *
+       heuristicWeights.array())
+          .matrix();
   d->Lxx.diagonal().segment(12, 8) +=
-      (gait_double.array() * last_position_weights_.array() * last_position_weights_.array()).matrix();
+      (gait_double.array() * last_position_weights_.array() *
+       last_position_weights_.array())
+          .matrix();
 
-  d->Lxx.diagonal().tail(1) << dt_bound_weight * rub_max_dt_bool[0] + dt_bound_weight * rub_max_dt_bool[1];
+  d->Lxx.diagonal().tail(1) << dt_bound_weight * rub_max_dt_bool[0] +
+                                   dt_bound_weight * rub_max_dt_bool[1];
 
   // New cost : partial derivatives of 20 and state (0--11)
-  d->Lxx.col(20).head(12) = (state_weights_.array() * d->r.template head<12>().array()).matrix();
+  d->Lxx.col(20).head(12) =
+      (state_weights_.array() * d->r.template head<12>().array()).matrix();
   d->Lxx.row(20).head(12) = d->Lxx.col(20).head(12);
 
   for (int j = 0; j < 4; j = j + 1) {
@@ -248,7 +304,8 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calcDiff(
       d->Lx(2, 0) += sh_weight * psh(2, j);
       d->Lx(3, 0) += sh_weight * pshoulder_0(1, j) * psh(2, j);
       d->Lx(4, 0) += -sh_weight * pshoulder_0(0, j) * psh(2, j);
-      d->Lx(5, 0) += sh_weight * (-pshoulder_0(1, j) * psh(0, j) + pshoulder_0(0, j) * psh(1, j));
+      d->Lx(5, 0) += sh_weight * (-pshoulder_0(1, j) * psh(0, j) +
+                                  pshoulder_0(0, j) * psh(1, j));
 
       d->Lx(12 + 2 * j, 0) += -sh_weight * psh(0, j);
       d->Lx(12 + 2 * j + 1, 0) += -sh_weight * psh(1, j);
@@ -258,7 +315,8 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calcDiff(
       d->Lxx(2, 2) += sh_weight;
       d->Lxx(3, 3) += sh_weight * pshoulder_0(1, j) * pshoulder_0(1, j);
       d->Lxx(3, 3) += sh_weight * pshoulder_0(0, j) * pshoulder_0(0, j);
-      d->Lxx(5, 5) += sh_weight * (pshoulder_0(1, j) * pshoulder_0(1, j) + pshoulder_0(0, j) * pshoulder_0(0, j));
+      d->Lxx(5, 5) += sh_weight * (pshoulder_0(1, j) * pshoulder_0(1, j) +
+                                   pshoulder_0(0, j) * pshoulder_0(0, j));
 
       d->Lxx(12 + 2 * j, 12 + 2 * j) += sh_weight;
       d->Lxx(12 + 2 * j + 1, 12 + 2 * j + 1) += sh_weight;
@@ -293,15 +351,20 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calcDiff(
 
   // Hessian : Luu
   // Matrix friction cone hessian (20x12)
-  Arr.diagonal() = ((Fa_x_u - ub).array() >= Scalar(0.)).matrix().template cast<Scalar>();
+  Arr.diagonal() =
+      ((Fa_x_u - ub).array() >= Scalar(0.)).matrix().template cast<Scalar>();
   for (int i = 0; i < 4; i = i + 1) {
     r = friction_weight_ * Arr.diagonal().segment(6 * i, 6);
-    d->Luu.block(3 * i, 3 * i, 3, 3) << r(0) + r(1), 0.0, mu * (r(1) - r(0)), 0.0, r(2) + r(3), mu * (r(3) - r(2)),
-        mu * (r(1) - r(0)), mu * (r(3) - r(2)), mu * mu * (r(0) + r(1) + r(2) + r(3)) + r(4) + r(5);
+    d->Luu.block(3 * i, 3 * i, 3, 3) << r(0) + r(1), 0.0, mu * (r(1) - r(0)),
+        0.0, r(2) + r(3), mu * (r(3) - r(2)), mu * (r(1) - r(0)),
+        mu * (r(3) - r(2)), mu * mu * (r(0) + r(1) + r(2) + r(3)) + r(4) + r(5);
   }
-  d->Luu.diagonal() = d->Luu.diagonal() + x(20) * (force_weights_.array() * force_weights_.array()).matrix();
+  d->Luu.diagonal() =
+      d->Luu.diagonal() +
+      x(20) * (force_weights_.array() * force_weights_.array()).matrix();
 
-  d->Lxu.row(20) = (force_weights_.array() * d->r.template tail<12>().array()).matrix();
+  d->Lxu.row(20) =
+      (force_weights_.array() * d->r.template tail<12>().array()).matrix();
 
   // Dynamic derivatives
   d->Fx.setZero();
@@ -314,20 +377,25 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calcDiff(
   for (int i = 0; i < 4; i = i + 1) {
     if (gait(i, 0) != 0) {
       forces_3d = u.block(3 * i, 0, 3, 1);
-      d->Fx.block(9, 0, 3, 1) += -x.tail(1)[0] * R * (base_vector_x.cross(forces_3d));
-      d->Fx.block(9, 1, 3, 1) += -x.tail(1)[0] * R * (base_vector_y.cross(forces_3d));
-      d->Fx.block(9, 2, 3, 1) += -x.tail(1)[0] * R * (base_vector_z.cross(forces_3d));
+      d->Fx.block(9, 0, 3, 1) +=
+          -x.tail(1)[0] * R * (base_vector_x.cross(forces_3d));
+      d->Fx.block(9, 1, 3, 1) +=
+          -x.tail(1)[0] * R * (base_vector_y.cross(forces_3d));
+      d->Fx.block(9, 2, 3, 1) +=
+          -x.tail(1)[0] * R * (base_vector_z.cross(forces_3d));
 
-      d->Fx.block(9, 12 + 2 * i, 3, 1) += x.tail(1)[0] * R * (base_vector_x.cross(forces_3d));
-      d->Fx.block(9, 12 + 2 * i + 1, 3, 1) += x.tail(1)[0] * R * (base_vector_y.cross(forces_3d));
+      d->Fx.block(9, 12 + 2 * i, 3, 1) +=
+          x.tail(1)[0] * R * (base_vector_x.cross(forces_3d));
+      d->Fx.block(9, 12 + 2 * i + 1, 3, 1) +=
+          x.tail(1)[0] * R * (base_vector_y.cross(forces_3d));
 
       d->Fx.block(6, 20, 3, 1) += (1 / mass) * forces_3d;
 
       lever_tmp.setZero();
       lever_tmp.head(2) = x.block(12 + 2 * i, 0, 2, 1);
       lever_tmp += -x.block(0, 0, 3, 1);
-      R_tmp << Scalar(0.0), -lever_tmp[2], lever_tmp[1], lever_tmp[2], Scalar(0.0), -lever_tmp[0], -lever_tmp[1],
-          lever_tmp[0], Scalar(0.0);
+      R_tmp << Scalar(0.0), -lever_tmp[2], lever_tmp[1], lever_tmp[2],
+          Scalar(0.0), -lever_tmp[0], -lever_tmp[1], lever_tmp[0], Scalar(0.0);
       d->Fx.block(9, 20, 3, 1) += R * R_tmp * forces_3d;
     }
   }
@@ -346,11 +414,13 @@ ActionModelQuadrupedAugmentedTimeTpl<Scalar>::createData() {
 ////////////////////////////////
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 12, 1>& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_force_weights() const {
+const typename Eigen::Matrix<Scalar, 12, 1>&
+ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_force_weights() const {
   return force_weights_;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_force_weights(const typename MathBase::VectorXs& weights) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_force_weights(
+    const typename MathBase::VectorXs& weights) {
   if (static_cast<std::size_t>(weights.size()) != 12) {
     throw_pretty("Invalid argument: "
                  << "Weights vector has wrong dimension (it should be 12)");
@@ -359,11 +429,13 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_force_weights(const typen
 }
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 12, 1>& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_state_weights() const {
+const typename Eigen::Matrix<Scalar, 12, 1>&
+ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_state_weights() const {
   return state_weights_;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_state_weights(const typename MathBase::VectorXs& weights) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_state_weights(
+    const typename MathBase::VectorXs& weights) {
   if (static_cast<std::size_t>(weights.size()) != 12) {
     throw_pretty("Invalid argument: "
                  << "Weights vector has wrong dimension (it should be 12)");
@@ -372,12 +444,13 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_state_weights(const typen
 }
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_heuristic_weights()
-    const {
+const typename Eigen::Matrix<Scalar, 8, 1>&
+ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_heuristic_weights() const {
   return heuristicWeights;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_heuristic_weights(const typename MathBase::VectorXs& weights) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_heuristic_weights(
+    const typename MathBase::VectorXs& weights) {
   if (static_cast<std::size_t>(weights.size()) != 8) {
     throw_pretty("Invalid argument: "
                  << "Weights vector has wrong dimension (it should be 8)");
@@ -386,12 +459,13 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_heuristic_weights(const t
 }
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_shoulder_position()
-    const {
+const typename Eigen::Matrix<Scalar, 8, 1>&
+ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_shoulder_position() const {
   return pshoulder_;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_shoulder_position(const typename MathBase::VectorXs& pos) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_shoulder_position(
+    const typename MathBase::VectorXs& pos) {
   if (static_cast<std::size_t>(pos.size()) != 8) {
     throw_pretty("Invalid argument: "
                  << "Weights vector has wrong dimension (it should be 8)");
@@ -400,11 +474,13 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_shoulder_position(const t
 }
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 8, 1>& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_stop_weights() const {
+const typename Eigen::Matrix<Scalar, 8, 1>&
+ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_stop_weights() const {
   return last_position_weights_;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_stop_weights(const typename MathBase::VectorXs& weights) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_stop_weights(
+    const typename MathBase::VectorXs& weights) {
   if (static_cast<std::size_t>(weights.size()) != 8) {
     throw_pretty("Invalid argument: "
                  << "Weights vector has wrong dimension (it should be 8)");
@@ -413,11 +489,13 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_stop_weights(const typena
 }
 
 template <typename Scalar>
-const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_friction_weight() const {
+const Scalar&
+ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_friction_weight() const {
   return friction_weight_;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_friction_weight(const Scalar& weight) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_friction_weight(
+    const Scalar& weight) {
   friction_weight_ = weight;
 }
 
@@ -426,7 +504,8 @@ const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_mu() const {
   return mu;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_mu(const Scalar& mu_coeff) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_mu(
+    const Scalar& mu_coeff) {
   mu = mu_coeff;
 }
 
@@ -445,7 +524,8 @@ const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_dt_min() const {
   return dt_min_[0];
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_dt_min(const Scalar& dt) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_dt_min(
+    const Scalar& dt) {
   // The model need to be updated after this changed
   dt_min_[0] = dt;
 }
@@ -455,17 +535,20 @@ const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_dt_max() const {
   return dt_max_[0];
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_dt_max(const Scalar& dt) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_dt_max(
+    const Scalar& dt) {
   // The model need to be updated after this changed
   dt_max_[0] = dt;
 }
 
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 3, 3>& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_gI() const {
+const typename Eigen::Matrix<Scalar, 3, 3>&
+ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_gI() const {
   return gI;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_gI(const typename MathBase::Matrix3s& inertia_matrix) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_gI(
+    const typename MathBase::Matrix3s& inertia_matrix) {
   // The model need to be updated after this changed
   if (static_cast<std::size_t>(inertia_matrix.size()) != 9) {
     throw_pretty("Invalid argument: "
@@ -475,23 +558,27 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_gI(const typename MathBas
 }
 
 template <typename Scalar>
-const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_min_fz_contact() const {
+const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_min_fz_contact()
+    const {
   // The model need to be updated after this changed
   return min_fz_in_contact;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_min_fz_contact(const Scalar& min_fz) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_min_fz_contact(
+    const Scalar& min_fz) {
   // The model need to be updated after this changed
   min_fz_in_contact = min_fz;
 }
 
 template <typename Scalar>
-const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_max_fz_contact() const {
+const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_max_fz_contact()
+    const {
   // The model need to be updated after this changed
   return max_fz;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_max_fz_contact(const Scalar& max_fz_) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_max_fz_contact(
+    const Scalar& max_fz_) {
   // The model need to be updated after this changed
   max_fz = max_fz_;
   for (int i = 0; i < 4; i = i + 1) {
@@ -500,21 +587,25 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_max_fz_contact(const Scal
 }
 
 template <typename Scalar>
-const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_shoulder_hlim() const {
+const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_shoulder_hlim()
+    const {
   return sh_hlim;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_shoulder_hlim(const Scalar& hlim) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_shoulder_hlim(
+    const Scalar& hlim) {
   // The model need to be updated after this changed
   sh_hlim = hlim;
 }
 
 template <typename Scalar>
-const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_shoulder_contact_weight() const {
+const Scalar& ActionModelQuadrupedAugmentedTimeTpl<
+    Scalar>::get_shoulder_contact_weight() const {
   return sh_weight;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_shoulder_contact_weight(const Scalar& weight) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_shoulder_contact_weight(
+    const Scalar& weight) {
   // The model need to be updated after this changed
   sh_weight = weight;
 }
@@ -523,21 +614,25 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_shoulder_contact_weight(c
 // Heuristic position
 ////////////////////////////////////////////
 template <typename Scalar>
-const bool& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_symmetry_term() const {
+const bool& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_symmetry_term()
+    const {
   return symmetry_term;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_symmetry_term(const bool& sym_term) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_symmetry_term(
+    const bool& sym_term) {
   // The model need to be updated after this changed
   symmetry_term = sym_term;
 }
 
 template <typename Scalar>
-const bool& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_centrifugal_term() const {
+const bool& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_centrifugal_term()
+    const {
   return centrifugal_term;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_centrifugal_term(const bool& cent_term) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_centrifugal_term(
+    const bool& cent_term) {
   // The model need to be updated after this changed
   centrifugal_term = cent_term;
 }
@@ -548,7 +643,8 @@ const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_T_gait() const {
   return T_gait;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_T_gait(const Scalar& T_gait_) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_T_gait(
+    const Scalar& T_gait_) {
   // The model need to be updated after this changed
   T_gait = T_gait_;
 }
@@ -557,19 +653,22 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_T_gait(const Scalar& T_ga
 //  lower/upper bound
 //////////////////////////////////////
 template <typename Scalar>
-const Scalar& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_dt_bound_weight() const {
+const Scalar&
+ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_dt_bound_weight() const {
   // The model need to be updated after this changed
   return dt_bound_weight;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_dt_bound_weight(const Scalar& weight_) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_dt_bound_weight(
+    const Scalar& weight_) {
   // The model need to be updated after this changed
   dt_bound_weight = weight_;
 }
 
 // Log cost
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 7, 1>& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_cost() const {
+const typename Eigen::Matrix<Scalar, 7, 1>&
+ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_cost() const {
   return cost_;
 }
 
@@ -577,22 +676,26 @@ const typename Eigen::Matrix<Scalar, 7, 1>& ActionModelQuadrupedAugmentedTimeTpl
 //// get A & B matrix /////
 ///////////////////////////
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 12, 12>& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_A() const {
+const typename Eigen::Matrix<Scalar, 12, 12>&
+ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_A() const {
   return A;
 }
 template <typename Scalar>
-const typename Eigen::Matrix<Scalar, 12, 12>& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_B() const {
+const typename Eigen::Matrix<Scalar, 12, 12>&
+ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_B() const {
   return B;
 }
 
 // to modify the cost on the command : || fz - m*g/nb contact ||^2
 // --> set to True
 template <typename Scalar>
-const bool& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_relative_forces() const {
+const bool& ActionModelQuadrupedAugmentedTimeTpl<Scalar>::get_relative_forces()
+    const {
   return relative_forces;
 }
 template <typename Scalar>
-void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_relative_forces(const bool& rel_forces) {
+void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_relative_forces(
+    const bool& rel_forces) {
   relative_forces = rel_forces;
   uref_.setZero();
   if (relative_forces) {
@@ -646,17 +749,20 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::update_model(
     pheuristic_.block(2 * i, 0, 2, 1) = l_feet.block(0, i, 2, 1);
   }
 
-  R_tmp << cos(xref(5, 0)), -sin(xref(5, 0)), Scalar(0), sin(xref(5, 0)), cos(xref(5, 0)), Scalar(0), Scalar(0),
-      Scalar(0), Scalar(1.0);
+  R_tmp << cos(xref(5, 0)), -sin(xref(5, 0)), Scalar(0), sin(xref(5, 0)),
+      cos(xref(5, 0)), Scalar(0), Scalar(0), Scalar(0), Scalar(1.0);
 
   // Centrifual term
   // pcentrifugal_tmp_1 = xref.block(6,0,3,1) ;
   // pcentrifugal_tmp_2 = xref.block(9,0,3,1) ;
-  // pcentrifugal_tmp = 0.5*std::sqrt(xref(2,0)/9.81) * pcentrifugal_tmp_1.cross(pcentrifugal_tmp_2) ;
+  // pcentrifugal_tmp = 0.5*std::sqrt(xref(2,0)/9.81) *
+  // pcentrifugal_tmp_1.cross(pcentrifugal_tmp_2) ;
 
   // for (int i=0; i<4; i=i+1){
-  //   pshoulder_tmp.block(0,i,2,1) =  R_tmp.block(0,0,2,2)*(pshoulder_0.block(0,i,2,1) +   symmetry_term *
-  //   0.25*T_gait*xref.block(6,0,2,1) + centrifugal_term * pcentrifugal_tmp.block(0,0,2,1) );
+  //   pshoulder_tmp.block(0,i,2,1) =
+  //   R_tmp.block(0,0,2,2)*(pshoulder_0.block(0,i,2,1) +   symmetry_term *
+  //   0.25*T_gait*xref.block(6,0,2,1) + centrifugal_term *
+  //   pcentrifugal_tmp.block(0,0,2,1) );
   // }
 
   R = (R_tmp * gI).inverse();  // I_inv

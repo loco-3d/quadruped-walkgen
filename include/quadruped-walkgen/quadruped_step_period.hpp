@@ -2,16 +2,16 @@
 #define __quadruped_walkgen_quadruped_step_period_hpp__
 #include <stdexcept>
 
-#include "crocoddyl/core/fwd.hpp"
 #include "crocoddyl/core/action-base.hpp"
+#include "crocoddyl/core/fwd.hpp"
 #include "crocoddyl/core/states/euclidean.hpp"
-#include "crocoddyl/multibody/friction-cone.hpp"
-
 #include "crocoddyl/core/utils/timer.hpp"
+#include "crocoddyl/multibody/friction-cone.hpp"
 
 namespace quadruped_walkgen {
 template <typename _Scalar>
-class ActionModelQuadrupedStepPeriodTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar> {
+class ActionModelQuadrupedStepPeriodTpl
+    : public crocoddyl::ActionModelAbstractTpl<_Scalar> {
  public:
   typedef _Scalar Scalar;
   typedef crocoddyl::ActionDataAbstractTpl<Scalar> ActionDataAbstract;
@@ -82,7 +82,8 @@ class ActionModelQuadrupedStepPeriodTpl : public crocoddyl::ActionModelAbstractT
   void set_speed_weight(const Scalar& weight_);
 
  protected:
-  using Base::has_control_limits_;  //!< Indicates whether any of the control limits
+  using Base::has_control_limits_;  //!< Indicates whether any of the control
+                                    //!< limits
   using Base::nr_;                  //!< Dimension of the cost residual
   using Base::nu_;                  //!< Control dimension
   using Base::state_;               //!< Model of the state
@@ -128,7 +129,8 @@ class ActionModelQuadrupedStepPeriodTpl : public crocoddyl::ActionModelAbstractT
 };
 
 template <typename _Scalar>
-struct ActionDataQuadrupedStepPeriodTpl : public crocoddyl::ActionDataAbstractTpl<_Scalar> {
+struct ActionDataQuadrupedStepPeriodTpl
+    : public crocoddyl::ActionDataAbstractTpl<_Scalar> {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   typedef _Scalar Scalar;
@@ -154,7 +156,8 @@ struct ActionDataQuadrupedStepPeriodTpl : public crocoddyl::ActionDataAbstractTp
 /* --- Details -------------------------------------------------------------- */
 /* --- Details -------------------------------------------------------------- */
 
-typedef ActionModelQuadrupedStepPeriodTpl<double> ActionModelQuadrupedStepPeriod;
+typedef ActionModelQuadrupedStepPeriodTpl<double>
+    ActionModelQuadrupedStepPeriod;
 typedef ActionDataQuadrupedStepPeriodTpl<double> ActionDataQuadrupedStepPeriod;
 
 }  // namespace quadruped_walkgen

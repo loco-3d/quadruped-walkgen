@@ -2,16 +2,16 @@
 #define __quadruped_walkgen_quadruped_step_hpp__
 #include <stdexcept>
 
-#include "crocoddyl/core/fwd.hpp"
 #include "crocoddyl/core/action-base.hpp"
+#include "crocoddyl/core/fwd.hpp"
 #include "crocoddyl/core/states/euclidean.hpp"
-#include "crocoddyl/multibody/friction-cone.hpp"
-
 #include "crocoddyl/core/utils/timer.hpp"
+#include "crocoddyl/multibody/friction-cone.hpp"
 
 namespace quadruped_walkgen {
 template <typename _Scalar>
-class ActionModelQuadrupedStepTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar> {
+class ActionModelQuadrupedStepTpl
+    : public crocoddyl::ActionModelAbstractTpl<_Scalar> {
  public:
   typedef _Scalar Scalar;
   typedef crocoddyl::ActionDataAbstractTpl<Scalar> ActionDataAbstract;
@@ -41,15 +41,17 @@ class ActionModelQuadrupedStepTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
 
   // Update the model depending if the foot in contact with the ground
   // or the new lever arms
-  void update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
-                    const Eigen::Ref<const typename MathBase::VectorXs>& S,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& position,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& velocity,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& acceleration,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& jerk,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& oRh,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& oTh, const Scalar& delta_T);
+  void update_model(
+      const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet,
+      const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
+      const Eigen::Ref<const typename MathBase::VectorXs>& S,
+      const Eigen::Ref<const typename MathBase::MatrixXs>& position,
+      const Eigen::Ref<const typename MathBase::MatrixXs>& velocity,
+      const Eigen::Ref<const typename MathBase::MatrixXs>& acceleration,
+      const Eigen::Ref<const typename MathBase::MatrixXs>& jerk,
+      const Eigen::Ref<const typename MathBase::MatrixXs>& oRh,
+      const Eigen::Ref<const typename MathBase::MatrixXs>& oTh,
+      const Scalar& delta_T);
 
   const bool& get_symmetry_term() const;
   void set_symmetry_term(const bool& sym_term);
@@ -87,7 +89,8 @@ class ActionModelQuadrupedStepTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
   void set_jerk_weight(const Scalar& weight_);
 
  protected:
-  using Base::has_control_limits_;  //!< Indicates whether any of the control limits
+  using Base::has_control_limits_;  //!< Indicates whether any of the control
+                                    //!< limits
   using Base::nr_;                  //!< Dimension of the cost residual
   using Base::nu_;                  //!< Control dimension
   using Base::state_;               //!< Model of the state
@@ -118,10 +121,12 @@ class ActionModelQuadrupedStepTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
 
   // Cost on the acceleration of the feet :
   int N_sampling;
-  bool is_acc_activated_;                         // Boolean to activate the cost on the acceleration of the feet
-  Scalar acc_weight_;                             // Weight on the acceleration cost
-  typename Eigen::Matrix<Scalar, 2, 1> acc_lim_;  // Maximum acceleration allowed on x and y axis
-  typename Eigen::Matrix<Scalar, 4, 1> S_;        // Containing the moving feet
+  bool is_acc_activated_;  // Boolean to activate the cost on the acceleration
+                           // of the feet
+  Scalar acc_weight_;      // Weight on the acceleration cost
+  typename Eigen::Matrix<Scalar, 2, 1>
+      acc_lim_;  // Maximum acceleration allowed on x and y axis
+  typename Eigen::Matrix<Scalar, 4, 1> S_;  // Containing the moving feet
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> delta_;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> gamma_;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> alpha_;
@@ -132,13 +137,17 @@ class ActionModelQuadrupedStepTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
 
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_accx_max_;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_accy_max_;
-  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_accx_max_bool_;
-  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_accy_max_bool_;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>
+      rb_accx_max_bool_;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>
+      rb_accy_max_bool_;
 
   // Cost on the velocity of the feet :
-  bool is_vel_activated_;                         // Boolean to activate the cost on the velocity of the feet
-  Scalar vel_weight_;                             // Weight on the velocity cost
-  typename Eigen::Matrix<Scalar, 2, 1> vel_lim_;  // Maximum velocity allowed on x and y axis
+  bool is_vel_activated_;  // Boolean to activate the cost on the velocity of
+                           // the feet
+  Scalar vel_weight_;      // Weight on the velocity cost
+  typename Eigen::Matrix<Scalar, 2, 1>
+      vel_lim_;  // Maximum velocity allowed on x and y axis
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> gamma_v;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> alpha_v;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> beta_x_v;
@@ -146,8 +155,10 @@ class ActionModelQuadrupedStepTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
 
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_velx_max_;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_vely_max_;
-  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_velx_max_bool_;
-  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rb_vely_max_bool_;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>
+      rb_velx_max_bool_;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>
+      rb_vely_max_bool_;
 
   // Cost on the jerk of the feet
   bool is_jerk_activated_;
@@ -163,7 +174,8 @@ class ActionModelQuadrupedStepTpl : public crocoddyl::ActionModelAbstractTpl<_Sc
 };
 
 template <typename _Scalar>
-struct ActionDataQuadrupedStepTpl : public crocoddyl::ActionDataAbstractTpl<_Scalar> {
+struct ActionDataQuadrupedStepTpl
+    : public crocoddyl::ActionDataAbstractTpl<_Scalar> {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   typedef _Scalar Scalar;
@@ -181,7 +193,8 @@ struct ActionDataQuadrupedStepTpl : public crocoddyl::ActionDataAbstractTpl<_Sca
   using Base::xnext;
 
   template <template <typename Scalar> class Model>
-  explicit ActionDataQuadrupedStepTpl(Model<Scalar>* const model) : crocoddyl::ActionDataAbstractTpl<Scalar>(model) {}
+  explicit ActionDataQuadrupedStepTpl(Model<Scalar>* const model)
+      : crocoddyl::ActionDataAbstractTpl<Scalar>(model) {}
 };
 
 /* --- Details -------------------------------------------------------------- */

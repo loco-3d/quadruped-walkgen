@@ -9,9 +9,9 @@
 #ifndef BINDINGS_PYTHON_QUADRUPED_WALKGEN_FWD_HPP_
 #define BINDINGS_PYTHON_QUADRUPED_WALKGEN_FWD_HPP_
 
-#include <eigenpy/eigenpy.hpp>
 #include <boost/python.hpp>
 #include <boost/python/enum.hpp>
+#include <eigenpy/eigenpy.hpp>
 
 namespace quadruped_walkgen {
 namespace python {

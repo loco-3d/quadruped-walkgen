@@ -2,16 +2,16 @@
 #define __quadruped_walkgen_quadruped_nl_hpp__
 #include <stdexcept>
 
-#include "crocoddyl/core/fwd.hpp"
 #include "crocoddyl/core/action-base.hpp"
+#include "crocoddyl/core/fwd.hpp"
 #include "crocoddyl/core/states/euclidean.hpp"
-#include "crocoddyl/multibody/friction-cone.hpp"
-
 #include "crocoddyl/core/utils/timer.hpp"
+#include "crocoddyl/multibody/friction-cone.hpp"
 
 namespace quadruped_walkgen {
 template <typename _Scalar>
-class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar> {
+class ActionModelQuadrupedNonLinearTpl
+    : public crocoddyl::ActionModelAbstractTpl<_Scalar> {
  public:
   typedef _Scalar Scalar;
   typedef crocoddyl::ActionDataAbstractTpl<Scalar> ActionDataAbstract;
@@ -19,7 +19,8 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
   typedef crocoddyl::MathBaseTpl<Scalar> MathBase;
 
   ActionModelQuadrupedNonLinearTpl(
-      typename Eigen::Matrix<Scalar, 3, 1> offset_CoM = Eigen::Matrix<Scalar, 3, 1>::Zero());
+      typename Eigen::Matrix<Scalar, 3, 1> offset_CoM =
+          Eigen::Matrix<Scalar, 3, 1>::Zero());
   ~ActionModelQuadrupedNonLinearTpl();
 
   virtual void calc(const boost::shared_ptr<ActionDataAbstract>& data,
@@ -82,7 +83,8 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
   const typename Eigen::Matrix<Scalar, 12, 12>& get_B() const;
 
  protected:
-  using Base::has_control_limits_;  //!< Indicates whether any of the control limits
+  using Base::has_control_limits_;  //!< Indicates whether any of the control
+                                    //!< limits
   using Base::nr_;                  //!< Dimension of the cost residual
   using Base::nu_;                  //!< Control dimension
   using Base::state_;               //!< Model of the state
@@ -139,7 +141,8 @@ class ActionModelQuadrupedNonLinearTpl : public crocoddyl::ActionModelAbstractTp
 };
 
 template <typename _Scalar>
-struct ActionDataQuadrupedNonLinearTpl : public crocoddyl::ActionDataAbstractTpl<_Scalar> {
+struct ActionDataQuadrupedNonLinearTpl
+    : public crocoddyl::ActionDataAbstractTpl<_Scalar> {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   typedef _Scalar Scalar;

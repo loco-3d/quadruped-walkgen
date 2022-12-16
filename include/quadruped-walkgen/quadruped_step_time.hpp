@@ -2,16 +2,16 @@
 #define __quadruped_walkgen_quadruped_step_time_hpp__
 #include <stdexcept>
 
-#include "crocoddyl/core/fwd.hpp"
 #include "crocoddyl/core/action-base.hpp"
+#include "crocoddyl/core/fwd.hpp"
 #include "crocoddyl/core/states/euclidean.hpp"
-#include "crocoddyl/multibody/friction-cone.hpp"
-
 #include "crocoddyl/core/utils/timer.hpp"
+#include "crocoddyl/multibody/friction-cone.hpp"
 
 namespace quadruped_walkgen {
 template <typename _Scalar>
-class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl<_Scalar> {
+class ActionModelQuadrupedStepTimeTpl
+    : public crocoddyl::ActionModelAbstractTpl<_Scalar> {
  public:
   typedef _Scalar Scalar;
   typedef crocoddyl::ActionDataAbstractTpl<Scalar> ActionDataAbstract;
@@ -41,11 +41,12 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
 
   // Update the model depending if the foot in contact with the ground
   // or the new lever arms
-  void update_model(const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& velocity,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& acceleration,
-                    const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
-                    const Eigen::Ref<const typename MathBase::VectorXs>& S);
+  void update_model(
+      const Eigen::Ref<const typename MathBase::MatrixXs>& l_feet,
+      const Eigen::Ref<const typename MathBase::MatrixXs>& velocity,
+      const Eigen::Ref<const typename MathBase::MatrixXs>& acceleration,
+      const Eigen::Ref<const typename MathBase::MatrixXs>& xref,
+      const Eigen::Ref<const typename MathBase::VectorXs>& S);
 
   const bool& get_symmetry_term() const;
   void set_symmetry_term(const bool& sym_term);
@@ -72,7 +73,8 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
   const typename Eigen::Matrix<Scalar, 7, 1>& get_cost() const;
 
  protected:
-  using Base::has_control_limits_;  //!< Indicates whether any of the control limits
+  using Base::has_control_limits_;  //!< Indicates whether any of the control
+                                    //!< limits
   using Base::nr_;                  //!< Dimension of the cost residual
   using Base::nu_;                  //!< Control dimension
   using Base::state_;               //!< Model of the state
@@ -89,7 +91,8 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
   int nb_alpha_;
   bool centrifugal_term;
   bool symmetry_term;
-  // indicates whether it t the 1st step, otherwise the cost function is much simpler (acc, speed = 0)
+  // indicates whether it t the 1st step, otherwise the cost function is much
+  // simpler (acc, speed = 0)
   bool first_step;
 
   typename Eigen::Matrix<Scalar, 12, 1> state_weights_;
@@ -113,7 +116,8 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_x;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_y;
   typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_2;
-  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> rub_max_first_bool;
+  typename Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>
+      rub_max_first_bool;
 
   // typename  Eigen::Array<Scalar, 3, 12 > b_coeff2 ;
   typename Eigen::Matrix<Scalar, 3, 4> lfeet;
@@ -143,7 +147,8 @@ class ActionModelQuadrupedStepTimeTpl : public crocoddyl::ActionModelAbstractTpl
 };
 
 template <typename _Scalar>
-struct ActionDataQuadrupedStepTimeTpl : public crocoddyl::ActionDataAbstractTpl<_Scalar> {
+struct ActionDataQuadrupedStepTimeTpl
+    : public crocoddyl::ActionDataAbstractTpl<_Scalar> {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   typedef _Scalar Scalar;

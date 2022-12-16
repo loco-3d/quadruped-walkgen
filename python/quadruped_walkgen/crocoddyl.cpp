@@ -6,8 +6,8 @@
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "fwd.hpp"
 #include "crocoddyl/core/utils/version.hpp"
+#include "fwd.hpp"
 #include "vector-converter.hpp"
 
 namespace quadruped_walkgen {
@@ -30,10 +30,13 @@ BOOST_PYTHON_MODULE(quadruped_walkgen_pywrap) {
   eigenpy::enableEigenPySpecific<MatrixX3>();
 
   // Register converters between std::vector and Python list
-  // TODO(cmastalli): figure out how to convert std::vector<double> to Python list
-  // bp::to_python_converter<std::vector<double, std::allocator<double> >, vector_to_list<double, false>, true>();
-  // bp::to_python_converter<std::vector<VectorX, std::allocator<VectorX> >, vector_to_list<VectorX, false>, true>();
-  // bp::to_python_converter<std::vector<MatrixX, std::allocator<MatrixX> >, vector_to_list<MatrixX, false>, true>();
+  // TODO(cmastalli): figure out how to convert std::vector<double> to Python
+  // list bp::to_python_converter<std::vector<double, std::allocator<double> >,
+  // vector_to_list<double, false>, true>();
+  // bp::to_python_converter<std::vector<VectorX, std::allocator<VectorX> >,
+  // vector_to_list<VectorX, false>, true>();
+  // bp::to_python_converter<std::vector<MatrixX, std::allocator<MatrixX> >,
+  // vector_to_list<MatrixX, false>, true>();
   list_to_vector()
       .from_python<std::vector<double, std::allocator<double> > >()
       .from_python<std::vector<VectorX, std::allocator<VectorX> > >()
