@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.14)
 
 # Set up project properties
 SET(PROJECT_NAMESPACE loco-3d)
@@ -14,14 +14,21 @@ SET(CXX_DISABLE_WERROR TRUE)
 SET(PROJECT_USE_CMAKE_EXPORT TRUE)
 
 # Check if the submodule cmake have been initialized
-IF(NOT EXISTS "${CMAKE_SOURCE_DIR}/cmake/base.cmake")
-  MESSAGE(FATAL_ERROR "\nPlease run the following command first:\ngit submodule update --init\n")
-ENDIF()
+# Check if the submodule cmake have been initialized
+set(JRL_CMAKE_MODULES "${CMAKE_CURRENT_LIST_DIR}/cmake")
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/cmake/base.cmake")
+    message(STATUS "JRL cmakemodules not found. Let's fetch it.")
+    include(FetchContent)
+    FetchContent_Declare(
+      "jrl-cmakemodules"
+      GIT_REPOSITORY "https://github.com/jrl-umi3218/jrl-cmakemodules.git")
+    FetchContent_MakeAvailable("jrl-cmakemodules")
+    FetchContent_GetProperties("jrl-cmakemodules" SOURCE_DIR JRL_CMAKE_MODULES)
+endif()
+
 
 # Include important cmake modules
-INCLUDE(cmake/base.cmake)
-INCLUDE(cmake/boost.cmake)
-INCLUDE(cmake/python.cmake)
+include("${JRL_CMAKE_MODULES}/base.cmake")
 
 COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
 PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
@@ -30,8 +37,6 @@ PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
 ADD_PROJECT_DEPENDENCY(crocoddyl REQUIRED)
 ADD_PROJECT_DEPENDENCY(example-robot-data)
 FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem system)
-FINDPYTHON(REQUIRED)
-SEARCH_FOR_BOOST_PYTHON(REQUIRED)
 STRING(REGEX REPLACE "-" "_" PYTHON_DIR ${PROJECT_NAME})
 
 OPTION(BUILD_WITH_MULTITHREADS "Build the library with the Multithreading support (required OpenMP)" ON)
