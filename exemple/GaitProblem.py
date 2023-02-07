@@ -9,7 +9,6 @@ from quadruped_walkgen import ActionModelQuadruped
 
 class GaitProblem:
     def __init__(self, dt=0.02, nx=12, nu=12, mu=0.8):
-
         # :param state: state description,
         # :param nu: dimension of control vector,
         # :param nr: dimension of the cost-residual vector (default 1)
@@ -63,7 +62,6 @@ class GaitProblem:
         self.ddp = crocoddyl.SolverDDP(self.problem)
 
     def updateProblem(self, fsteps, xref, x0):
-
         self.fsteps = fsteps
         self.createGaitMatrix()
 
@@ -75,7 +73,6 @@ class GaitProblem:
         # The first column of xref correspond to the current state
         while self.gait[j, 0] != 0:
             for i in range(k_cum, k_cum + np.int(self.gait[j, 0])):
-
                 # Update model
                 self.ListAction[i].updateModel(
                     np.reshape(self.fsteps[j, 1:], (3, 4), order="F"),
@@ -100,7 +97,6 @@ class GaitProblem:
         self.problem.x0 = x0
 
     def createGaitMatrix(self):
-
         # Construction of the gait matrix representing the feet
         # in contact with the ground
         index = next(
@@ -115,7 +111,6 @@ class GaitProblem:
         self.fsteps[np.isnan(self.fsteps)] = 0.0
 
     def runProblem(self):
-
         self.ddp.solve([], [], self.max_iteration)
 
         return 0
