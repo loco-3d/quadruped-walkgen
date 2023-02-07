@@ -182,7 +182,6 @@ def updateProblem(fsteps, xref, x0, problem):
     # The first column of xref correspond to the current state
     while gait[j, 0] != 0:
         for i in range(k_cum, k_cum + np.int(gait[j, 0])):
-
             # Update model
             problem.runningModels[i].updateModel(
                 np.reshape(fsteps[j, 1:], (3, 4), order="F"),
