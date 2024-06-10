@@ -59,14 +59,14 @@ void ActionModelQuadrupedTimeTpl<Scalar>::calc(
     const Eigen::Ref<const typename MathBase::VectorXs>& x,
     const Eigen::Ref<const typename MathBase::VectorXs>& u) {
   if (static_cast<std::size_t>(x.size()) != state_->get_nx()) {
-    throw_pretty(
-        "Invalid argument: " << "x has wrong dimension (it should be " +
-                                    std::to_string(state_->get_nx()) + ")");
+    throw_pretty("Invalid argument: "
+                 << "x has wrong dimension (it should be " +
+                        std::to_string(state_->get_nx()) + ")");
   }
   if (static_cast<std::size_t>(u.size()) != nu_) {
-    throw_pretty(
-        "Invalid argument: " << "u has wrong dimension (it should be " +
-                                    std::to_string(nu_) + ")");
+    throw_pretty("Invalid argument: "
+                 << "u has wrong dimension (it should be " +
+                        std::to_string(nu_) + ")");
   }
 
   ActionDataQuadrupedTimeTpl<Scalar>* d =
@@ -119,14 +119,14 @@ void ActionModelQuadrupedTimeTpl<Scalar>::calcDiff(
     const Eigen::Ref<const typename MathBase::VectorXs>& x,
     const Eigen::Ref<const typename MathBase::VectorXs>& u) {
   if (static_cast<std::size_t>(x.size()) != state_->get_nx()) {
-    throw_pretty(
-        "Invalid argument: " << "x has wrong dimension (it should be " +
-                                    std::to_string(state_->get_nx()) + ")");
+    throw_pretty("Invalid argument: "
+                 << "x has wrong dimension (it should be " +
+                        std::to_string(state_->get_nx()) + ")");
   }
   if (static_cast<std::size_t>(u.size()) != nu_) {
-    throw_pretty(
-        "Invalid argument: " << "u has wrong dimension (it should be " +
-                                    std::to_string(nu_) + ")");
+    throw_pretty("Invalid argument: "
+                 << "u has wrong dimension (it should be " +
+                        std::to_string(nu_) + ")");
   }
 
   ActionDataQuadrupedTimeTpl<Scalar>* d =
