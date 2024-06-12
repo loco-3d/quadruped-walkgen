@@ -103,14 +103,14 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calc(
     const Eigen::Ref<const typename MathBase::VectorXs>& x,
     const Eigen::Ref<const typename MathBase::VectorXs>& u) {
   if (static_cast<std::size_t>(x.size()) != state_->get_nx()) {
-    throw_pretty(
-        "Invalid argument: " << "x has wrong dimension (it should be " +
-                                    std::to_string(state_->get_nx()) + ")");
+    throw_pretty("Invalid argument: "
+                 << "x has wrong dimension (it should be " +
+                        std::to_string(state_->get_nx()) + ")");
   }
   if (static_cast<std::size_t>(u.size()) != nu_) {
-    throw_pretty(
-        "Invalid argument: " << "u has wrong dimension (it should be " +
-                                    std::to_string(nu_) + ")");
+    throw_pretty("Invalid argument: "
+                 << "u has wrong dimension (it should be " +
+                        std::to_string(nu_) + ")");
   }
 
   ActionDataQuadrupedAugmentedTimeTpl<Scalar>* d =
@@ -233,14 +233,14 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::calcDiff(
     const Eigen::Ref<const typename MathBase::VectorXs>& x,
     const Eigen::Ref<const typename MathBase::VectorXs>& u) {
   if (static_cast<std::size_t>(x.size()) != state_->get_nx()) {
-    throw_pretty(
-        "Invalid argument: " << "x has wrong dimension (it should be " +
-                                    std::to_string(state_->get_nx()) + ")");
+    throw_pretty("Invalid argument: "
+                 << "x has wrong dimension (it should be " +
+                        std::to_string(state_->get_nx()) + ")");
   }
   if (static_cast<std::size_t>(u.size()) != nu_) {
-    throw_pretty(
-        "Invalid argument: " << "u has wrong dimension (it should be " +
-                                    std::to_string(nu_) + ")");
+    throw_pretty("Invalid argument: "
+                 << "u has wrong dimension (it should be " +
+                        std::to_string(nu_) + ")");
   }
 
   ActionDataQuadrupedAugmentedTimeTpl<Scalar>* d =
@@ -551,7 +551,8 @@ void ActionModelQuadrupedAugmentedTimeTpl<Scalar>::set_gI(
     const typename MathBase::Matrix3s& inertia_matrix) {
   // The model need to be updated after this changed
   if (static_cast<std::size_t>(inertia_matrix.size()) != 9) {
-    throw_pretty("Invalid argument: " << "gI has wrong dimension : 3x3");
+    throw_pretty("Invalid argument: "
+                 << "gI has wrong dimension : 3x3");
   }
   gI = inertia_matrix;
 }
